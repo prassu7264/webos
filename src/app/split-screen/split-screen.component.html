@@ -1,0 +1,29 @@
+<!-- app.component.html -->
+
+<div class="screen-container">
+    <gridster [options]="options" class="drag-content drag-handler">
+        <gridster-item *ngFor="let item of zoneinfo" [item]="item" class="grid-item">
+            <div class="widget-content">
+                <app-content-player [filesData]="item?.media_list"></app-content-player>
+            </div>
+        </gridster-item>
+    </gridster>
+
+    <div class="px-4" style="position: absolute;bottom: 4em;z-index: 1;right: 1.5em;">
+        <ng-container [ngSwitch]="status">
+            <img [ngClass]="status" *ngSwitchCase="'ONLINE'" style="width: 70px;" src="assets/images/ONLINE.png"
+                alt="⦿">
+            <img [ngClass]="status" *ngSwitchCase="'OFFLINE'" style="width: 70px;" src="assets/images/OFFLINE.png"
+                alt="⦿">
+        </ng-container>
+    </div>
+
+    <!-- Top Scroller -->
+    <app-scroller *ngIf="topScrollers.length" [scrollers]="topScrollers" class="ticker-bar top-ticker">
+    </app-scroller>
+
+    <!-- Bottom Scroller -->
+    <app-scroller *ngIf="bottomScrollers.length" [scrollers]="bottomScrollers" class="ticker-bar bottom-ticker">
+    </app-scroller>
+
+</div>

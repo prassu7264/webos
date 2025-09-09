@@ -1,0 +1,1 @@
+build.tz: /home/user/Tizen-data/profile/profiles.xml ../tizen_web_project.yaml

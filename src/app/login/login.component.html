@@ -1,0 +1,61 @@
+<section style="height: 100vh; width: 100vw; background: linear-gradient(135deg, #224b72, #0c3552);">
+
+    <div style="height: 100vh; width: 100vw;" *ngIf="!isVideoPlayed">
+        <video id="launchervideo" height="100%" autoplay src="./assets/launcher/launch-landscape.mp4"
+            width="100%"></video>
+    </div>
+
+    <div class="row"
+        style="height: 100vh; width: 100vw; background: linear-gradient(135deg, #224b72, #0c3552);display: flex; justify-content: center; align-items: center;">
+        <div style="display: flex; justify-content: center; align-items: center; ">
+            <img style="width: 100px;" src="./assets/images/appweblogo.png" alt="" class="" srcset="">
+        </div>
+        <div>
+            <h1 class="text-center" style="color: aliceblue;
+            text-transform: capitalize;
+            font-size:xx-large; line-height: 1.3;">new device registration</h1>
+        </div>
+        <div id="qrcode" class="card"
+            style=" border-radius: 10px; display: flex; justify-content: center; align-items: center; background: white; max-width: 460px; padding: 1em;">
+        </div>
+        <div style="display: flex; justify-content: center; align-items: center; ">
+            <form [formGroup]="deviceForm" class="example-form " (ngSubmit)="submit()">
+                <mat-form-field class="example-full-width">
+                    <mat-label>Device unique code</mat-label>
+                    <input type="text" matInput formControlName="deviceCode" placeholder="Ex. IQW000001"
+                        style="text-transform: uppercase;" (input)="toUppercase($event)" />
+
+                    <mat-hint style="color: white; font-weight: 500;">
+                        Enter device unique code!
+                    </mat-hint>
+
+                    <mat-error *ngIf="deviceForm.get('deviceCode')?.hasError('pattern')">
+                        Code must start with IQW followed by digits (Ex. IQW123)
+                    </mat-error>
+
+                    <mat-error *ngIf="deviceForm.get('deviceCode')?.hasError('required')">
+                        Device unique code is <strong>required</strong>
+                    </mat-error>
+                </mat-form-field>
+
+                <br><br>
+                <!-- IMPORTANT: type="submit" -->
+                <button id="submit-button" mat-raised-button type="submit">
+                    Submit
+                </button>
+            </form>
+
+        </div>
+        <p class="text-center" style="padding-right: 4px; color: white; font-weight: 500;">{{deviceUID}} <br>
+            {{version}}</p>
+    </div>
+    <div class="overlay" *ngIf="isOpenSwalAlert">
+        <div class="card">
+            <mat-icon class="icon">info</mat-icon>
+            <h1 class="title">{{type}}</h1>
+            <p class="text">{{text}}</p>
+            <span class="text">{{contact}}</span>
+        </div>
+    </div>
+
+</section>

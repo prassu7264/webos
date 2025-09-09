@@ -1,0 +1,97 @@
+<mat-stepper orientation="vertical" #stepper>
+    <mat-step *ngFor="let option of radioOptions">
+        <ng-template matStepLabel>{{option.title}} </ng-template>
+        <!-- <div class="card-content">
+            <div style="display: flex;justify-content: end;margin-bottom: 1em;">
+                <div class="icon-container">
+                    <img [src]="option.icon" alt="{{option.title}} icon" class="radio-icon">
+                </div>
+            </div>
+        </div> -->
+        <div class="device-details" *ngIf="option.device">
+            <div class="card-content">
+                <!-- Device Title and Icon -->
+                <div class="header">
+                    <h3>Device Details: {{ deviceInfo.username }}</h3>
+                </div>
+
+                <!-- Device Details -->
+                <div class="info-row">
+                    <span class="info-label">Model:</span>
+                    <span class="info-value">{{ deviceInfo.modelname }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Customer name:</span>
+                    <span class="info-value">{{ deviceInfo.clientname +" ("+deviceInfo.client_id+")" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Screen:</span>
+                    <span class="info-value">{{ deviceInfo.orientation=="9:16"?"Vertical" :"Horizontal" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Version:</span>
+                    <span class="info-value">{{ deviceInfo.version || 'Not Available' |titlecase }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">State :</span>
+                    <span class="info-value">{{ deviceInfo.state_name +" ("+deviceInfo.state_id+")" |titlecase }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">District :</span>
+                    <span class="info-value">{{ deviceInfo.district_name +" ("+deviceInfo.district_id+")" |titlecase
+                        }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">City :</span>
+                    <span class="info-value">{{ deviceInfo.city_name +" ("+deviceInfo.city_id+")" |titlecase }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Location:</span>
+                    <span class="info-value">{{ deviceInfo.location +" ("+deviceInfo.locationid+")" |titlecase }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">IPK Version:</span>
+                    <span class="info-value">{{ deviceInfo.apkVersion!="null" ?deviceInfo.apkVersion: version || 'v1.0'
+                        }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Device Status:</span>
+                    <span class="info-value">{{ deviceInfo.device_status ? 'Active' : 'Inactive' }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-content" *ngIf="option.islogout">
+            <div style="display: flex;justify-content: center;margin-bottom: 1em;">
+                <div class="icon-container">
+                    <img [src]="option.icon" alt="{{option.title}} icon" class="radio-icon">
+                </div>
+            </div>
+            <p style="text-align: center;color: #ff4081; font-weight: 500;">Are you sure you want to logout?</p>
+            <div style="display: flex; justify-content: center; gap: 1em; margin-top: 1em;">
+                <button #yesBtn mat-raised-button (click)="openLogoutDialog()">Yes, Logout</button>
+            </div>
+
+        </div>
+
+    </mat-step>
+</mat-stepper>
+
+<ng-template #logoutconfirm>
+    <h2 mat-dialog-title style="color: #ff4081;">Do you want to save device UID?</h2>
+    <mat-dialog-content class="mat-typography">
+        <h3>Buttons & Actions</h3>
+        <ul>
+            <li><strong style="font-weight: 400; color: #ff4081;">Close</strong> → Cancel, nothing happens.</li>
+            <li><strong style="font-weight: 400; color: #ff4081;">No, logout</strong> → Logout without saving UID.</li>
+            <li><strong style="font-weight: 400; color: #ff4081;">Yes, logout</strong> → Logout and save UID.</li>
+        </ul>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close>
+            Close
+        </button>
+        <button mat-raised-button [mat-dialog-close]="'no'">No, logout</button>
+        <button mat-raised-button [mat-dialog-close]="'yes'" cdkFocusInitial>Yes, logout</button>
+    </mat-dialog-actions>
+</ng-template>

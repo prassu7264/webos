@@ -1,0 +1,14 @@
+<div [ngSwitch]="filesData[currentIndex]?.type">
+    <img *ngSwitchCase="'image'" style="height: 100%; width: 100%; object-fit: fill !important;" [src]="filesData[currentIndex].Url" alt="image" class="media-image" />
+
+    <video *ngSwitchCase="'video'" style="min-height: 100%; min-width: 100%; object-fit: fill !important;" id="media-video" [src]="filesData[currentIndex].Url" class="media-video"></video>
+
+    <app-ytplayer *ngSwitchCase="'youtube'" [url]="filesData[currentIndex].Url" [index]="currentIndex" [loop]="filesData.length ===1"
+        (videoEnded)="onVideoEnded($event)"></app-ytplayer>
+
+    <!-- <app-ytubeplayer *ngSwitchCase="'youtube'" [url]="filesData[currentIndex].Url" [index]="currentIndex"
+        (videoEnded)="onVideoEnded($event)"></app-ytubeplayer> -->
+
+    <app-pdf-viewer [loop]="filesData.length ===1" (pdfEnded)="onVideoEnded($event)" *ngSwitchCase="'pdf'" [url]="filesData[currentIndex].Url">
+    </app-pdf-viewer>
+</div>

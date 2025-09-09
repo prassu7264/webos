@@ -1,0 +1,39 @@
+ninja_required_version = 1.7.2
+
+rule gn
+  command = ../../../../Tizen/tools/tizen-core/tgn --root=./.. -q --C gen .
+  description = Regenerating ninja files
+
+rule tz_gen
+  command = /home/user/Tizen/tools/tizen-core/tz gen .
+  description = Regenerating build files
+
+build build.tz: tz_gen
+  generator = 1
+  depfile = build.tz.d
+build build.ninja: gn | build.tz
+  generator = 1
+  depfile = build.ninja.d
+
+
+subninja toolchain.ninja
+
+build build: phony obj/Build/build.stamp
+build iqtizen.build_web: phony obj/iqtizen/iqtizen.build_web.stamp
+build pack: phony obj/Build/pack.stamp
+build Build$:build: phony obj/Build/build.stamp
+build Build$:hash: phony obj/Build/hash.stamp
+build Build$:pack: phony obj/Build/pack.stamp
+build iqtizen$:all: phony obj/iqtizen/all.stamp
+build iqtizen$:hash: phony obj/iqtizen/hash.stamp
+build iqtizen$:iqtizen.build_web: phony obj/iqtizen/iqtizen.build_web.stamp
+
+build all: phony $
+    obj/Build/build.stamp $
+    obj/Build/hash.stamp $
+    obj/Build/pack.stamp $
+    obj/iqtizen/all.stamp $
+    obj/iqtizen/hash.stamp $
+    obj/iqtizen/iqtizen.build_web.stamp
+
+default all

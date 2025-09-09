@@ -1,0 +1,12 @@
+ng build --output-path=./iqwebos-webos/www --configuration production
+
+cd ./iqwebos-webos/
+
+ares-package . --no-minify
+
+ares-launch --device tv com.smarttv.launchapp
+
+ares-inspect --device tv --reload com.smarttv.launchapp 
+
+
+ng build --output-path=./iqtizen/www --configuration production

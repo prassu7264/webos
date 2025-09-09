@@ -1,1 +1,154 @@
-/* You can add global styles to this file, and also import other style files */
+@font-face {
+  font-family: "DMSans";
+  src: url("./assets/fonts/SFUIDisplay-Regular.otf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Aller_Rg';
+  src: url('./assets/fonts/Aller_Rg.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'chunkfive';
+  src: url('./assets/fonts/ChunkFive-Regular.otf') format('truetype');
+}
+
+@font-face {
+  font-family: 'fira-sans';
+  src: url('./assets/fonts/FiraSans-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'lato';
+  src: url('./assets/fonts/Lato-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'lobster-two';
+  src: url('./assets/fonts/Lobster Two Regular_2533.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'FFF-Tusj';
+  src: url('./assets/fonts/FFF Tusj Gras 700.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Signwood-Italic';
+  src: url('./assets/fonts/Signwood-Italic.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Signwood-Regular';
+  src: url('./assets/fonts/Signwood-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'LeagueSpartan-Bold';
+  src: url('./assets/fonts/LeagueSpartan-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Foxgrab';
+  src: url('./assets/fonts/Foxgrab.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'EspressoShow';
+  src: url('./assets/fonts/Espresso_Show.otf') format('truetype');
+}
+
+@font-face {
+  font-family: 'ParmaInitialenMK';
+  src: url('./assets/fonts/ParmaInitialenMK.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'digital-7';
+  src: url('./assets/fonts/digital-7.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'fontawesome-webfont';
+  src: url('./assets/fonts/fontawesome-webfont.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('./assets/fonts/Font Awesome 5 Free-Solid-900.otf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins-Regular';
+  src: url('./assets/fonts/Poppins-Regular.ttf') format('truetype');
+}
+
+html,
+body {
+  font-family: "DMSans", sans-serif !important;
+}
+
+.mat-h1,
+.mat-headline-5,
+.mat-typography .mat-h1,
+.mat-typography .mat-headline-5,
+.mat-typography h1 {
+  line-height: normal !important;
+}
+
+:root {
+  --color-primary: #378cee;
+  // --swal2-border-radius: 1em !important;
+  // --swal2-border: 2px solid #00c8ff !important;
+  // --swal2-confirm-button-box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px !important;
+  // --swal2-cancel-button-box-shadow: #32325d40 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px !important;
+  // --swal2-action-button-focus-box-shadow: 0 0 0 2px rgb(255, 255, 255) !important;
+  // --swal2-background:linear-gradient(135deg, #224b72, #0c3552) !important;
+}
+
+// .swal2-popup {
+//   box-shadow: 0 0 25px rgba(0, 200, 255, 0.4) !important;
+//   padding: 0.4em 3em;
+//   color: aliceblue;
+// }
+
+.mat-mdc-raised-button.mdc-ripple-upgraded--background-focused,
+.mat-mdc-raised-button:not(.mdc-ripple-upgraded):focus {
+  box-shadow: var(--mdc-protected-button-focus-container-elevation, 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12));
+  background-color: #ff4081 !important;
+  color: #fff !important;
+}
+
+// .mat-step-header.cdk-keyboard-focused,
+// .mat-step-header.cdk-program-focused,
+// .mat-step-header:hover:not([aria-disabled]),
+// .mat-step-header:hover[aria-disabled=false] {
+//      background-color: #378cee !important;
+// }
+
+::ng-deep ngx-extended-pdf-viewer {
+  height: 100vh !important;
+  width: 100% !important;
+}
+
+iframe {
+  height: 100vh !important;
+  width: 100vw !important;
+}
+
+gridster {
+  background-color: black !important;
+}
+
+.mat-mdc-button.mat-mdc-button-base,
+.mat-mdc-raised-button.mat-mdc-button-base,
+.mat-mdc-unelevated-button.mat-mdc-button-base,
+.mat-mdc-outlined-button.mat-mdc-button-base {
+  height: 30px !important;
+}
+
+#viewerContainer {
+  overflow: hidden !important;
+}
