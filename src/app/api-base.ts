@@ -1,7 +1,7 @@
 export class clienturl {
 
     static CURRENT_VERSION(): String {
-        return "v1.0.1"
+        return "v1.0.2"
     }
 
     static RELEASE_DATE(): String {
