@@ -1,6 +1,6 @@
 {
   "id": "com.smarttv.launchapp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "vendor": "MRRIDSYS TECHNOLOGIES Pvt.Ltd",
   "type": "web",
   "main": "www/index.html",
