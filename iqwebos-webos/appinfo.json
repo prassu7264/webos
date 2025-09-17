@@ -1,6 +1,6 @@
 {
   "id": "com.smarttv.launchapp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "vendor": "MRRIDSYS TECHNOLOGIES Pvt.Ltd",
   "type": "web",
   "main": "www/index.html",
@@ -10,17 +10,21 @@
     "accesswebosservice",
     "public",
     "accessibility",
-    "fullscreen"
+    "fullscreen",
+    "acg3",
+    "download.management",
+    "storageaccess.operation"
   ],
   "permissions": [
     "systeminfo",
     "network.query",
     "network.management",
-    "network"
+    "network",
+    "com.webos.service.downloadmanager",
+    "com.webos.service.storageaccess"
   ],
   "visible": true,
   "inspectable": true,
   "fullscreen": true,
   "noWindow": false
 }
- 
