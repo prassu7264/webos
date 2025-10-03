@@ -1,13 +1,35 @@
-
+<!-- 
 <div [ngSwitch]="filesData[currentIndex]?.type">
     <img *ngSwitchCase="'image'" style="height: 100%; width: 100%; object-fit: fill !important;"
         [src]="filesData[currentIndex].Url" alt="image" class="media-image" />
 
     <video *ngSwitchCase="'video'" style="min-height: 100%; min-width: 100%; object-fit: fill !important;"
-        id="media-video" [src]="filesData[currentIndex].Url" class="media-video"></video>
+        id="media-video" [src]="filesData[currentIndex].Url" class="media-video"></video> -->
 
-    <!-- IMPORTANT: wrap the player in an *ngIf bound to playerRecreateKey to force recreate -->
+<!-- IMPORTANT: wrap the player in an *ngIf bound to playerRecreateKey to force recreate -->
+<!-- <ng-container *ngSwitchCase="'youtube'">
+        <app-ytplayer *ngIf="playerRecreateKey" [url]="filesData[currentIndex].Url" [index]="currentIndex"
+            [loop]="filesData.length === 1" (videoEnded)="onVideoEnded($event)">
+        </app-ytplayer>
+    </ng-container>
+
+    <app-pdf-viewer *ngSwitchCase="'pdf'" [loop]="filesData.length === 1" (pdfEnded)="onVideoEnded($event)"
+        [url]="filesData[currentIndex].Url">
+    </app-pdf-viewer>
+</div> -->
+
+<!-- content-player.component.html -->
+<div [ngSwitch]="filesData[currentIndex]?.type">
+    <img *ngSwitchCase="'image'" style="height:100%; width:100%; object-fit:cover" [src]="filesData[currentIndex].Url"
+        alt="image" class="media-image" />
+
+    <!-- use template ref so component can update src safely -->
+    <video #videoEl *ngSwitchCase="'video'" id="media-video" class="media-video" autoplay muted playsinline
+        style="height:100%; width:100%; object-fit:cover;">
+    </video>
+
     <ng-container *ngSwitchCase="'youtube'">
+        <!-- recreate via playerRecreateKey -->
         <app-ytplayer *ngIf="playerRecreateKey" [url]="filesData[currentIndex].Url" [index]="currentIndex"
             [loop]="filesData.length === 1" (videoEnded)="onVideoEnded($event)">
         </app-ytplayer>

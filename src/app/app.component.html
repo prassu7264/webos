@@ -6,9 +6,10 @@
     <p><strong>OS:</strong> {{ netspeed?.os }}</p>
 </div>
 <ng-template #DeviceSettings>
-    <h2 mat-dialog-title style="color: #ff4081;">Device Settings</h2>
+    <h2 mat-dialog-title style="color: #ff4081; margin-bottom: 0px;">Device Settings</h2>
     <mat-dialog-content class="mat-typography">
-        <app-menu></app-menu>
+        <!-- <app-menu></app-menu> -->
+        <app-menu2></app-menu2>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button [mat-dialog-close]="true" cdkFocusInitial>Close</button>
@@ -27,3 +28,9 @@
         <button mat-raised-button [mat-dialog-close]="true" cdkFocusInitial>Yes, exit</button>
     </mat-dialog-actions>
 </ng-template>
+
+<button *ngIf="!isOnline" (click)="goOffline()">Go Offline</button>
+
+
+
+<!-- <app-usb-reader></app-usb-reader> -->

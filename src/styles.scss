@@ -152,3 +152,46 @@ gridster {
 #viewerContainer {
   overflow: hidden !important;
 }
+
+.mat-mdc-dialog-container .mdc-dialog__surface {
+ background-color: #061b31 !important;
+}
+
+.mdc-dialog .mdc-dialog__content {
+    padding: 20px 50px 20px 50px !important;
+    color: #0398d7 !important;
+}
+
+/* Default landscape mode */
+.app-root.landscape {
+  transform: none;
+}
+
+/* Portrait mode */
+.app-root.portrait {
+  transform: rotate(90deg);
+  transform-origin: center center;
+  width: 100vh;
+  height: 100vw;
+  overflow: hidden;
+}
+
+/* Landscape default */
+.app-root.landscape video,
+.app-root.landscape iframe {
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+/* Portrait override */
+.app-root.portrait video,
+.app-root.portrait iframe {
+  width: 100vh !important;
+  height: 100vw !important;
+  object-fit: cover; // makes sure video fills rotated screen
+}
+
+#viewer{
+  width: 100vw !important;
+  height: fit-content !important;
+}

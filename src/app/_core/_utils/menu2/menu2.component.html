@@ -1,0 +1,95 @@
+<div class="settings-container">
+    <div class="settings-grid">
+        <button class="settings-card" id="settings-card" *ngFor="let option of radioOptions; let i = index"
+            #settingsCard (click)="openOption(option)">
+            <img [src]="option.icon" alt="{{ option.title }} icon" class="settings-icon" />
+            <p class="settings-label" style="font-style: initial; font-family: unset;">{{ option.title }}</p>
+        </button>
+    </div>
+</div>
+
+
+<!-- Device Details Popup -->
+<ng-template #deviceDetails>
+    <div class="card-content">
+        <div class="header">
+            <h3>Device Details: {{ deviceInfo.username }}</h3>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Model:</span>
+            <span class="info-value">{{ deviceInfo.modelname }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Customer name:</span>
+            <span class="info-value">{{ deviceInfo.clientname +" ("+deviceInfo.client_id+")" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Screen:</span>
+            <span class="info-value">{{ deviceInfo.orientation=="9:16"?"Vertical" :"Horizontal" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Version:</span>
+            <span class="info-value">{{ deviceInfo.version || 'Not Available' |titlecase }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">State :</span>
+            <span class="info-value">{{ deviceInfo.state_name +" ("+deviceInfo.state_id+")" |titlecase }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">District :</span>
+            <span class="info-value">{{ deviceInfo.district_name +" ("+deviceInfo.district_id+")" |titlecase
+                }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">City :</span>
+            <span class="info-value">{{ deviceInfo.city_name +" ("+deviceInfo.city_id+")" |titlecase }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Location:</span>
+            <span class="info-value">{{ deviceInfo.location +" ("+deviceInfo.locationid+")" |titlecase }}</span>
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">IPK Version:</span>
+            <span class="info-value">{{ deviceInfo.apkVersion!="null" ?deviceInfo.apkVersion: version || 'v1.0'
+                }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Device Status:</span>
+            <span class="info-value">{{ deviceInfo.device_status ? 'Active' : 'Inactive' }}</span>
+        </div>
+        <mat-dialog-actions align="end">
+            <button mat-raised-button mat-dialog-close>Close</button>
+        </mat-dialog-actions>
+    </div>
+</ng-template>
+
+<!-- First logout confirmation -->
+<ng-template #logoutStep1>
+    <h2 mat-dialog-title style="color: #ff4081;">Are you sure you want to logout?</h2>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close>No</button>
+        <button mat-raised-button [mat-dialog-close]="'yes'">Yes</button>
+    </mat-dialog-actions>
+</ng-template>
+
+<!-- Second logout confirmation -->
+<ng-template #logoutStep2>
+    <h2 mat-dialog-title style="color: #ff4081;">Do you want to save device UID?</h2>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button [mat-dialog-close]="'no'">Reset</button>
+        <button mat-raised-button color="primary" [mat-dialog-close]="'yes'" cdkFocusInitial>Remember</button>
+    </mat-dialog-actions>
+</ng-template>
+
+<!-- User Manual PDF Dialog -->
+<!-- <ng-template #userManual> -->
+    <!-- <mat-dialog-content >
+        <app-pdf-viewer class="pdf-dialog-container pdfContain" [isScroll]="false" (pdfEnded)="onPdfEnded($event)">
+        </app-pdf-viewer>
+    </mat-dialog-content> -->
+
+    <!-- <mat-dialog-actions align="center">
+        <button mat-raised-button color="primary" mat-dialog-close>Close</button>
+    </mat-dialog-actions> -->
+<!-- </ng-template> -->

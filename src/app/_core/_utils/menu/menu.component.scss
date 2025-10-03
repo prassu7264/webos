@@ -81,3 +81,79 @@ h3 {
 .mat-mdc-form-field {
   margin-top: 16px;
 }
+
+
+
+
+/* 🎨 Logout Dialog Styling */
+.logout-dialog-panel .mat-dialog-container {
+  background: linear-gradient(160deg, #0c3552, #112a44, #1c4c6e);
+  border: 2px solid rgba(255, 64, 129, 0.6);
+  border-radius: 16px;
+  box-shadow: 0 0 30px rgba(255, 64, 129, 0.5);
+  color: #fff;
+  padding: 24px;
+  animation: logoutFadeIn 0.4s ease;
+}
+
+/* Title */
+.logout-dialog-panel .mat-dialog-title {
+  color: #ff4081 !important;
+  font-weight: 700;
+  font-size: 22px;
+  text-align: center;
+  text-shadow: 0 0 6px rgba(255, 64, 129, 0.7);
+}
+
+/* Content */
+.logout-dialog-panel .mat-dialog-content {
+  font-size: 16px;
+  color: #eee;
+}
+
+.logout-dialog-panel ul li {
+  margin: 6px 0;
+  color: #ddd;
+}
+
+.logout-dialog-panel strong {
+  color: #ff4081;
+  font-weight: 600;
+}
+
+/* Actions */
+.logout-dialog-panel .mat-dialog-actions button {
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 8px 18px;
+  transition: all 0.25s ease;
+}
+
+.logout-dialog-panel .mat-dialog-actions button:first-child {
+  background: #444;
+  color: #fff;
+}
+
+.logout-dialog-panel .mat-dialog-actions button:nth-child(2) {
+  background: #ff5252;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 82, 82, 0.5);
+}
+
+.logout-dialog-panel .mat-dialog-actions button:last-child {
+  background: #00c8ff;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.4);
+}
+
+/* ✨ Animation */
+@keyframes logoutFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

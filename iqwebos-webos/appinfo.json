@@ -1,6 +1,6 @@
 {
-  "id": "com.smarttv.launchapp",
-  "version": "1.0.4",
+  "id": "com.ridsys.iqwebos",
+  "version": "1.0.0",
   "vendor": "MRRIDSYS TECHNOLOGIES Pvt.Ltd",
   "type": "web",
   "main": "www/index.html",
@@ -8,12 +8,10 @@
   "icon": "icon.png",
   "requiredPermissions": [
     "accesswebosservice",
-    "public",
-    "accessibility",
-    "fullscreen",
-    "acg3",
     "download.management",
-    "storageaccess.operation"
+    "storageaccess.operation",
+    "fullscreen",
+    "public"
   ],
   "permissions": [
     "systeminfo",
@@ -21,7 +19,16 @@
     "network.management",
     "network",
     "com.webos.service.downloadmanager",
-    "com.webos.service.storageaccess"
+    "com.webos.service.storageaccess",
+    "com.webos.service.usb",
+    "com.webos.service.tvpower",
+    "com.webos.service.tvdisplay",
+    "com.webos.service.appmanager",
+    "com.webos.service.mediacontroller",
+    "com.webos.service.tv.systemproperty",
+    "com.webos.service.drm",
+    "com.webos.service.bluetooth2",
+    "com.webos.service.wifi"
   ],
   "visible": true,
   "inspectable": true,

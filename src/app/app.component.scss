@@ -31,3 +31,31 @@
     margin: 2px 0;
   }
 }
+
+.app-root.landscape {
+  transform: none;
+}
+
+.app-root.portrait {
+  transform: rotate(90deg);
+  transform-origin: center center;
+  width: 100vh;
+  height: 100vw;
+  overflow: hidden;
+}
+
+
+:host-context(.landscape) {
+  transform: rotate(0deg) !important;
+  transform-origin: center center !important;
+  width: 100vh !important;
+  height: 100vw !important;
+}
+
+:host-context(.portrait) {
+  transform: rotate(90deg) !important;
+  transform-origin: center center !important;
+  width: 100vh !important; // swap width/height
+  height: 100vw !important;
+  overflow: hidden !important;
+}

@@ -61,16 +61,13 @@ export class MenuComponent implements OnInit {
 
 
   constructor(private dialog: MatDialog, private authService: AuthService, private toastService: ToastService) {
-
     this.deviceInfo = JSON.parse(sessionStorage.getItem('device') || '{}');
     console.log(this.deviceInfo);
-
-
   }
   ngOnInit(): void {
 
   }
- 
+
 
 
   openLogoutDialog(): void {
@@ -101,7 +98,6 @@ export class MenuComponent implements OnInit {
   }
 
 
- 
 
 
   // Reset stepper on cancel

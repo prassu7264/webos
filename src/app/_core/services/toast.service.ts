@@ -7,9 +7,9 @@ import { ToastrService, IndividualConfig } from 'ngx-toastr';
 })
 export class ToastService {
   private options: Partial<IndividualConfig> = {
-    timeOut: 3000,
+    timeOut: 1500,
     positionClass: 'toast-top-right',
-    closeButton: true,
+    closeButton: false,
     progressBar: true
   };
 

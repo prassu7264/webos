@@ -1,0 +1,17 @@
+<div>
+  <h3>USB Devices</h3>
+  <ul>
+    <li *ngFor="let dev of devices" (click)="listFiles(dev.deviceId)">
+      {{ dev.deviceName }} (ID: {{ dev.deviceId }})
+    </li>
+  </ul>
+
+  <h3>Files</h3>
+  <ul>
+    <li *ngFor="let file of files">
+      {{ file.name }} ({{ file.type }})
+    </li>
+  </ul>
+
+  <p *ngIf="error" style="color:red;">{{ error }}</p>
+</div>

@@ -20,7 +20,7 @@ export class DeviceInfoService {
 
     let uid: string = "";
 
-    // ✅ webOS (PalmServiceBridge)
+    //  webOS (PalmServiceBridge)
     if (typeof window !== "undefined" && (window as any).PalmServiceBridge) {
       uid = await new Promise((resolve) => {
         try {
@@ -55,7 +55,7 @@ export class DeviceInfoService {
         }
       });
 
-      // ✅ Samsung Tizen (webapis.productinfo)
+      //  Samsung Tizen (webapis.productinfo)
     } else if (typeof window !== "undefined" && (window as any).webapis?.productinfo) {
       try {
         const productInfo = (window as any).webapis.productinfo;
@@ -75,55 +75,6 @@ export class DeviceInfoService {
     this.deviceUIDSubject.next(uid);
     return uid;
   }
-
-  // async initDeviceUID(): Promise<string> {
-  //   // return existing UID if already initialized
-  //   const currentUID = this.deviceUIDSubject.getValue();
-  //   if (currentUID) return currentUID;
-
-  //   let uid: string;
-
-  //   if (typeof window !== 'undefined' && (window as any).PalmServiceBridge) {
-  //     uid = await new Promise((resolve) => {
-  //       try {
-  //         const bridge = new (window as any).PalmServiceBridge();
-  //         const url = "luna://com.webos.service.tv.systemproperty/getSystemInfo";
-  //         const params = JSON.stringify({
-  //           keys: ["serialNumber", "modelName", "firmwareVersion", "deviceId"]
-  //         });
-
-  //         bridge.onservicecallback = (msg: any) => {
-  //           try {
-  //             const res = JSON.parse(msg);
-  //             if (res.returnValue && res.serialNumber) {
-  //               console.log("Got Serial via PalmServiceBridge:", res.serialNumber);
-  //               resolve(res.serialNumber);
-  //             } else {
-  //               console.warn("Serial not found, using deviceId or fallback");
-  //               resolve(res.deviceId || crypto.randomUUID());
-  //             }
-  //           } catch (err) {
-  //             console.error("Error parsing response", err);
-  //             resolve(crypto.randomUUID());
-  //           }
-  //         };
-
-  //         bridge.call(url, params);
-  //       } catch (err) {
-  //         console.error("PalmServiceBridge failed:", err);
-  //         resolve(crypto.randomUUID());
-  //       }
-  //     });
-  //   } else {
-  //     // fallback for non-webOS browsers/dev
-  //     uid = localStorage.getItem('fallback_duid') || crypto.randomUUID();
-  //     localStorage.setItem('fallback_duid', uid);
-  //   }
-
-  //   this.deviceUIDSubject.next(uid);
-  //   return uid;
-  // }
-
   getDeviceUID(): string | null {
     return this.deviceUIDSubject.getValue();
   }

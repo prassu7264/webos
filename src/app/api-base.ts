@@ -1,12 +1,12 @@
 export class clienturl {
 
     static CURRENT_VERSION(): String {
-        return "v1.0.2"
+        return "v1.0.4"
     }
 
     static RELEASE_DATE(): String {
 
-        return "Monday, 18 August 2025";
+        return "Monday, 15 September 2025";
     }
 
     static SERVER_URL(): String {

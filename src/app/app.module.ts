@@ -13,7 +13,10 @@ import { CoreModule } from './_core/core/core.module';
 import { SplitScreenComponent } from './split-screen/split-screen.component';
 import { ContentPlayerComponent } from './content-player/content-player.component';
 import { ScrollerComponent } from './scroller/scroller.component';
-
+import { CommonModule } from '@angular/common';
+import { Menu2Component } from './_core/_utils/menu2/menu2.component';
+import { OfflinePlayerComponent } from './offline-player/offline-player.component';
+import { UsbReaderComponent } from './usb-reader/usb-reader.component';
 
 
 
@@ -25,6 +28,9 @@ import { ScrollerComponent } from './scroller/scroller.component';
     SplitScreenComponent,
     ContentPlayerComponent,
     ScrollerComponent,
+    Menu2Component,
+    OfflinePlayerComponent,
+    UsbReaderComponent
   
   ],
   imports: [
@@ -33,6 +39,7 @@ import { ScrollerComponent } from './scroller/scroller.component';
     BrowserAnimationsModule,
     MatMaterialModule,
     HttpClientModule,
+    CommonModule,
     ToastrModule.forRoot({
       timeOut: 3000,
       positionClass: 'toast-top-right',
