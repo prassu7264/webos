@@ -1,37 +1,27 @@
 {
-  "id": "com.ridsys.iqwebos",
+  "id": "com.ridsys.iqdisplayplayer",
   "version": "1.0.0",
-  "vendor": "MRRIDSYS TECHNOLOGIES Pvt.Ltd",
+  "vendor": "MRRIDSYS TECHNOLOGIES PRIVATE LIMITED",
   "type": "web",
   "main": "www/index.html",
   "title": "IQ WebOS Player",
   "icon": "icon.png",
+  "bgColor": "black",
+  "uiRevision": 2,
+  "supportFullscreen": true,
+  "largeIcon": "icon.png",
   "requiredPermissions": [
     "accesswebosservice",
-    "download.management",
-    "storageaccess.operation",
-    "fullscreen",
     "public"
   ],
   "permissions": [
     "systeminfo",
     "network.query",
     "network.management",
-    "network",
-    "com.webos.service.downloadmanager",
-    "com.webos.service.storageaccess",
-    "com.webos.service.usb",
-    "com.webos.service.tvpower",
-    "com.webos.service.tvdisplay",
-    "com.webos.service.appmanager",
-    "com.webos.service.mediacontroller",
-    "com.webos.service.tv.systemproperty",
-    "com.webos.service.drm",
-    "com.webos.service.bluetooth2",
-    "com.webos.service.wifi"
+    "network"
   ],
   "visible": true,
-  "inspectable": true,
   "fullscreen": true,
   "noWindow": false
 }
+ 
