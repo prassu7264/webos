@@ -1,3 +1,4 @@
+
 import { AfterViewInit, Component, HostListener, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ErrorStateMatcher } from '@angular/material/core';
@@ -6,6 +7,7 @@ import { DeviceInfoService } from '../_core/services/device-info.service';
 import { AuthService } from '../_core/services/auth.service';
 import { ToastService } from '../_core/services/toast.service';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 
 const BASE_API = clienturl.WEB_URL();
 
@@ -32,6 +34,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 	type: any;
 	text: any;
 	isExistedCalled = false;
+	isAnypopped = false;
 	version = clienturl.CURRENT_VERSION();
 	contact: any = "Lumocast Digital Signage Pvt Ltd | Support@Cansignage.Com | +91 91523 98498";
 
@@ -40,8 +43,9 @@ export class LoginComponent implements OnInit, AfterViewInit {
 		private authService: AuthService,
 		private router: Router,
 		private toastService: ToastService,
-		private fb: FormBuilder
-	) {}
+		private fb: FormBuilder,
+		private dialog: MatDialog
+	) { }
 
 	ngOnInit(): void {
 		this.deviceForm = this.fb.group({
@@ -62,7 +66,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
 		if (this.isVideoPlayed) {
 			this.checkDeviceAndNavigate();
-			setInterval(() => this.checkDeviceAndNavigate(), 10000);
+			setInterval(() => this.checkDeviceAndNavigate(), 1000);
 		}
 	}
 
@@ -84,6 +88,15 @@ export class LoginComponent implements OnInit, AfterViewInit {
 	}
 
 	private checkDeviceAndNavigate(): void {
+		if (this.dialog.openDialogs.length > 0) {
+			this.isAnypopped = true;
+			this.deviceForm.get('deviceCode')?.disable();
+		} else {
+			this.isAnypopped = false;
+			this.deviceForm.get('deviceCode')?.enable();
+		}
+
+
 		if (!this.deviceUID) return;
 
 		this.authService.isExistedDevice(this.deviceUID).subscribe((res: any) => {
@@ -101,13 +114,13 @@ export class LoginComponent implements OnInit, AfterViewInit {
 					this.type = !client_status
 						? "Approval Pending...!"
 						: isexpired
-						? "Subscription Expired...!"
-						: "Approval Pending...!";
+							? "Subscription Expired...!"
+							: "Approval Pending...!";
 					this.text = !client_status
 						? "Please wait until your profile is approved by admin."
 						: isexpired
-						? "Subscription expired Please contact admin."
-						: "Please wait until your device is approved by admin.";
+							? "Subscription expired Please contact admin."
+							: "Please wait until your device is approved by admin.";
 					this.isOpenSwalAlert = true;
 				}
 			} else {
@@ -155,28 +168,28 @@ export class LoginComponent implements OnInit, AfterViewInit {
 		});
 	}
 
-	@HostListener('document:keydown', ['$event'])
-	onKeydown(event: KeyboardEvent) {
-		const focusable = Array.from(
-			document.querySelectorAll<HTMLElement>('button, input')
-		).filter(el => !el.hasAttribute('disabled'));
+	// // @HostListener('document:keydown', ['$event'])
+	// onKeydown(event: KeyboardEvent) {
+	// 	const focusable = Array.from(
+	// 		document.querySelectorAll<HTMLElement>('button,input')
+	// 	).filter(el => !el.hasAttribute('disabled'));
 
-		const index = focusable.indexOf(document.activeElement as HTMLElement);
+	// 	const index = focusable.indexOf(document.activeElement as HTMLElement);
 
-		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-			const next = (index + 1) % focusable.length;
-			focusable[next].focus();
-			event.preventDefault();
-		}
+	// 	if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+	// 		const next = (index + 1) % focusable.length;
+	// 		focusable[next].focus();
+	// 		event.preventDefault();
+	// 	}
 
-		if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-			const prev = (index - 1 + focusable.length) % focusable.length;
-			focusable[prev].focus();
-			event.preventDefault();
-		}
+	// 	if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+	// 		const prev = (index - 1 + focusable.length) % focusable.length;
+	// 		focusable[prev].focus();
+	// 		event.preventDefault();
+	// 	}
 
-		if (event.key === 'Enter') {
-			(document.activeElement as HTMLElement)?.click();
-		}
-	}
+	// 	if (event.key === 'Enter') {
+	// 		(document.activeElement as HTMLElement)?.click();
+	// 	}
+	// }
 }

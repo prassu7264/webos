@@ -183,53 +183,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	@HostListener('document:keydown', ['$event'])
 	onKeydown(event: KeyboardEvent) {
-		const openDialogs = this.dialog.openDialogs;
-		const isExitPopupOpen = !!openDialogs.find(d => d.componentInstance === this.exitconfirm);
-		const isDevicePopupOpen = !!openDialogs.find(d => d.componentInstance === this.deviceSettings);
-
-		//  1. Exit popup has highest priority → lock focus ONLY to popup buttons
-		if (isExitPopupOpen) {
-			const popupButtons = Array.from(
-				document.querySelectorAll<HTMLElement>('.exit-btn')
-			);
-
-			if (popupButtons.length > 0) {
-				let index = popupButtons.indexOf(document.activeElement as HTMLElement);
-				if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-					index = (index + 1) % popupButtons.length;
-					popupButtons[index]?.focus();
-					event.preventDefault();
-					event.stopPropagation();
-					return;
-				}
-				if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-					index = (index - 1 + popupButtons.length) % popupButtons.length;
-					popupButtons[index]?.focus();
-					event.preventDefault();
-					event.stopPropagation();
-					return;
-				}
-				if (event.key === 'Enter') {
-					(document.activeElement as HTMLElement)?.click();
-					event.preventDefault();
-					event.stopPropagation();
-					return;
-				}
-			}
-
-			// Block everything else (so login form or background can't be focused)
-			event.stopPropagation();
-			event.preventDefault();
-			return;
-		}
-
-		//  2. Device Settings Popup: allow normal arrow + enter inside
-		if (isDevicePopupOpen) {
-			// do NOT block anything here - let it work naturally
-			return;
-		}
-
-		//  3. Normal page navigation when no popup is open
 		const focusable = Array.from(
 			document.querySelectorAll<HTMLElement>(
 				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -253,9 +206,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 		if (event.key === 'Enter') {
 			(document.activeElement as HTMLElement)?.click();
 		}
+
+		const isPopupOpen = this.dialog.openDialogs.length > 0;
+		if (isPopupOpen) {
+			if (event.key === 'Escape' || event.keyCode === 461 || event.keyCode === 10009) {
+				this.dialog.closeAll();
+			} else {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			return;
+		}
 	}
-
-
 
 
 	ngOnDestroy(): void {
