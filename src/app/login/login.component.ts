@@ -1,4 +1,3 @@
-
 import { AfterViewInit, Component, HostListener, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ErrorStateMatcher } from '@angular/material/core';
@@ -96,7 +95,6 @@ export class LoginComponent implements OnInit, AfterViewInit {
 			this.deviceForm.get('deviceCode')?.enable();
 		}
 
-
 		if (!this.deviceUID) return;
 
 		this.authService.isExistedDevice(this.deviceUID).subscribe((res: any) => {
@@ -168,28 +166,4 @@ export class LoginComponent implements OnInit, AfterViewInit {
 		});
 	}
 
-	// // @HostListener('document:keydown', ['$event'])
-	// onKeydown(event: KeyboardEvent) {
-	// 	const focusable = Array.from(
-	// 		document.querySelectorAll<HTMLElement>('button,input')
-	// 	).filter(el => !el.hasAttribute('disabled'));
-
-	// 	const index = focusable.indexOf(document.activeElement as HTMLElement);
-
-	// 	if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
-	// 		const next = (index + 1) % focusable.length;
-	// 		focusable[next].focus();
-	// 		event.preventDefault();
-	// 	}
-
-	// 	if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
-	// 		const prev = (index - 1 + focusable.length) % focusable.length;
-	// 		focusable[prev].focus();
-	// 		event.preventDefault();
-	// 	}
-
-	// 	if (event.key === 'Enter') {
-	// 		(document.activeElement as HTMLElement)?.click();
-	// 	}
-	// }
 }
