@@ -22,15 +22,11 @@
         <h4 class="text-center">Do you want to exit the application?</h4>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-        <button mat-raised-button mat-dialog-close>
+        <button mat-raised-button mat-dialog-close class="exit-btn">
             Close
         </button>
-        <button mat-raised-button [mat-dialog-close]="true" >Yes, exit</button>
+        <button mat-raised-button [mat-dialog-close]="true" class="exit-btn">Yes, exit</button>
     </mat-dialog-actions>
 </ng-template>
-
-<button *ngIf="!isOnline" (click)="goOffline()">Go Offline</button>
-
-
 
 <!-- <app-usb-reader></app-usb-reader> -->

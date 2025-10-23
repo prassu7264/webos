@@ -95,6 +95,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 			this.deviceForm.get('deviceCode')?.enable();
 		}
 
+
 		if (!this.deviceUID) return;
 
 		this.authService.isExistedDevice(this.deviceUID).subscribe((res: any) => {
