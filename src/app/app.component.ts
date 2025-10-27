@@ -17,7 +17,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 	@ViewChild('exitconfirm', { static: true }) exitconfirm!: TemplateRef<any>;
 	@ViewChild('DeviceSettings', { static: true }) deviceSettings!: TemplateRef<any>;
 	dialogRef: any;
-	exitDialogRef!: MatDialogRef<any>;
+	exitDialogRef: MatDialogRef<any> | null = null;
+
 
 	constructor(private dialog: MatDialog, private router: Router) { }
 
@@ -94,25 +95,38 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 					this.openInstallDialog();
 				}
 				break;
-			case 10009:
-			case 461:
-			case 27:
-				this.exitApp();
+			case 10009: // Tizen Back
+			case 461:   // webOS Back
+			case 27:    // ESC / Browser
 				event.preventDefault();
 				event.stopPropagation();
+
+				// Delay slightly to prevent multiple triggers
+				setTimeout(() => this.exitApp(), 150);
 				break;
+
 		}
 	}
 
 	exitApp() {
 		try {
 			const openDialogs = this.dialog.openDialogs;
+
+			//  1. If any dialog is open, close the topmost and stop
 			if (openDialogs.length > 0) {
-				openDialogs[openDialogs.length - 1].close();
+				const topDialog = openDialogs[openDialogs.length - 1];
+				topDialog.close();
 				return;
 			}
 
-			if (!this.dialog.openDialogs.find(d => d.componentInstance === this.exitconfirm)) {
+			//  2. If no dialogs open, only then show Exit confirmation
+			if (!this.exitDialogRef || !this.exitDialogRef.getState || this.exitDialogRef.getState() === 0) {
+				// Make sure Exit popup is not already open
+				const alreadyOpen = this.dialog.openDialogs.some(
+					d => d.componentInstance?.templateRef === this.exitconfirm
+				);
+				if (alreadyOpen) return;
+
 				this.exitDialogRef = this.dialog.open(this.exitconfirm, {
 					minWidth: '450px',
 					disableClose: true
@@ -123,6 +137,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 				});
 
 				this.exitDialogRef.afterClosed().subscribe((result: any) => {
+					this.exitDialogRef = null; //  clear reference
+
 					if (result) {
 						try {
 							if ((window as any).tizen) {
@@ -142,6 +158,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 			console.error("❌ exitApp error:", err);
 		}
 	}
+
 
 	private registerExitPopupFocus() {
 		const dialogContainer = document.querySelector('.mat-dialog-container');
@@ -167,7 +184,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 			} else if (event.key === 'Enter') {
 				buttons[index].click();
 			} else if (event.key === 'Escape' || event.keyCode === 461 || event.keyCode === 10009) {
-				this.exitDialogRef.close();
+				this.exitDialogRef?.close();
+
 			}
 		};
 

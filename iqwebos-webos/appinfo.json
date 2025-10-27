@@ -22,6 +22,8 @@
   ],
   "visible": true,
   "fullscreen": true,
-  "noWindow": false
+  "noWindow": false,
+  "keyFilter": {
+    "back": "true"
+  }
 }
- 

@@ -261,25 +261,6 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 
 	constructor(private toastService: ToastService, private downloadService: WebosDownloadService) { }
 
-	// ngOnInit() {
-
-	// 	this.downloadImage("https://ds.iqtv.in/iqsignage/4/3181/IQ_WORLD_35184275.jpg", "IQ_WORLD_35184275.jpg")
-	// }
-
-
-	// downloadImage(imageUrl: string, filename: string) {
-	// 	fetch(imageUrl)
-	// 		.then(res => res.blob())
-	// 		.then(blob => {
-	// 			const url = window.URL.createObjectURL(blob);
-	// 			const a = document.createElement('a');
-	// 			a.href = url;
-	// 			a.download = filename;
-	// 			a.click();
-	// 			window.URL.revokeObjectURL(url);
-	// 		});
-	// }
-
 	ngOnChanges(changes: SimpleChanges): void {
 		if (changes['filesData'] && changes['filesData'].currentValue) {
 			this.loadMediaFiles();
@@ -301,7 +282,6 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 
 		// start background downloads (service will dedupe)
 		const remoteList = (this.filesData || []).map(f => ({ Url: f.Url, type: f.type }));
-		console.log("From content player component!!")
 		this.downloadService.backgroundDownloadList(remoteList);
 
 		this.resetPlayerForYouTube();

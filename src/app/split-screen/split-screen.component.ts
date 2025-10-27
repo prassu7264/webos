@@ -139,7 +139,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			});
 
 			// single call - service will ignore already downloaded or in-progress items
-			console.log("From Split screen inside of loadMediaFiles()")
+			// console.log("From Split screen inside of loadMediaFiles()")
 			this.wds.backgroundDownloadList(allMedia);
 
 			this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
@@ -170,7 +170,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				});
 
 				// avoid duplicate downloads — service will dedupe
-				console.log("From Split screen inside of checkForUpdates()")
+				// console.log("From Split screen inside of checkForUpdates()")
 				this.wds.backgroundDownloadList(allMedia);
 
 				this.currentIndex = 0;
