@@ -121,6 +121,8 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 	@ViewChild('scrollTrack') scrollTrack!: ElementRef;
 
 	public baseDuration: number = 20; // default fallback duration
+	animationReady = false;
+
 
 	ngOnInit() { }
 
@@ -135,41 +137,41 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 	}
 
 	private updateScrollSpeed() {
+		this.animationReady = false;  // Hide initially
+
 		setTimeout(() => {
 			const wrapper = this.scrollWrapper?.nativeElement as HTMLElement;
 			const track = this.scrollTrack?.nativeElement as HTMLElement;
 			if (!wrapper || !track || !this.scrollers.length) return;
 
 			const direction = this.scrollers[0].direction || 'left';
-
-			// sum durations from API (fallback = 5s each)
 			const totalDuration = this.scrollers.reduce(
 				(sum, s) => sum + (Number(s.scrlspeed) || 5),
 				0
 			);
 
-			// compute width/height depending on direction
 			if (direction === 'left' || direction === 'right') {
 				const wrapperWidth = wrapper.offsetWidth;
 				const trackWidth = track.scrollWidth;
-
-				this.baseDuration = totalDuration > 0 ? totalDuration : (wrapperWidth + trackWidth) / 100;
-
+				this.baseDuration = totalDuration || (wrapperWidth + trackWidth) / 100;
 				track.style.setProperty('--start', wrapperWidth + 'px');
 				track.style.setProperty('--trackWidth', trackWidth + 'px');
-			} else if (direction === 'up' || direction === 'down') {
+			} else {
 				const wrapperHeight = wrapper.offsetHeight;
 				const trackHeight = track.scrollHeight;
-
-				this.baseDuration = totalDuration > 0 ? totalDuration : (wrapperHeight + trackHeight) / 100;
-
+				this.baseDuration = totalDuration || (wrapperHeight + trackHeight) / 100;
 				track.style.setProperty('--start', wrapperHeight + 'px');
 				track.style.setProperty('--trackHeight', trackHeight + 'px');
 			}
 
 			track.style.animationDuration = `${this.baseDuration}s`;
+
+			requestAnimationFrame(() => {
+				this.animationReady = true;
+			});
 		});
 	}
+
 
 	public calcPadding(scroller: ScrollerItem): string {
 		const size = Number(scroller.fnsize) || 20;
