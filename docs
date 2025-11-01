@@ -10,3 +10,11 @@ ares-inspect --device tv --reload com.smarttv.launchapp
 
 
 ng build --output-path=./iqtizen/www --configuration production
+
+
+GIT Commands:
+
+    $  git status
+    $  git reset --hard HEAD
+    $  git clean -fd
+    $  git pull origin <branch name>
