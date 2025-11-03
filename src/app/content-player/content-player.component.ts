@@ -293,6 +293,8 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	 * - prefer localPath if downloaded (even when online)
 	 * - when offline, only include items that have localPath (skip others)
 	 */
+	// 
+	
 	private prepareFiles(files: any[]): any[] {
 		const downloadedMap = this.downloadService.getDownloadedMap();
 		const isOffline = !navigator.onLine;
@@ -300,19 +302,24 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		return (files || []).map(file => {
 			const remoteUrl = (file?.Url || '').toString();
 			const norm = (remoteUrl || '').split('?')[0];
+
+			// --- Skip YouTube items ALWAYS ---
+			if (remoteUrl.includes('youtube.com') || remoteUrl.includes('youtu.be')) {
+				console.warn(" Skipping YouTube content:", remoteUrl);
+				return null;
+			}
+
 			const downloaded = downloadedMap[norm] ?? downloadedMap[remoteUrl];
 
-			// if offline and no downloaded copy → skip this file
+			// skip if offline & no downloaded file
 			if (isOffline && !downloaded) return null;
 
-			// prefer localPath if exists, otherwise remoteUrl
+			// prefer local if exists
 			const playUrl = downloaded ? downloaded.url : remoteUrl;
 
-			// guess type from remote original
 			const lurl = (remoteUrl || '').toLowerCase();
 			let type: any = 'other';
-			if (lurl.includes('youtube.com') || lurl.includes('youtu.be')) type = 'youtube';
-			else if (/\.(mp4|mov|avi|mkv|webm)$/i.test(lurl)) type = 'video';
+			if (/\.(mp4|mov|avi|mkv|webm)$/i.test(lurl)) type = 'video';
 			else if (/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/i.test(lurl)) type = 'image';
 			else if (lurl.endsWith('.pdf')) type = 'pdf';
 
@@ -320,58 +327,112 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		}).filter(Boolean) as any[];
 	}
 
+
+
 	private showCurrentSlide() {
-		clearTimeout(this.autoplayTimer);
-		const currentFile = this.filesData[this.currentIndex];
-		if (!currentFile) return;
+    clearTimeout(this.autoplayTimer);
+    const currentFile = this.filesData[this.currentIndex];
+    if (!currentFile) return;
 
-		const isOffline = !navigator.onLine;
-		const downloaded = this.downloadService.findDownloaded(currentFile.remoteUrl);
-		const playUrl = isOffline	? (downloaded ? downloaded.url : null)	: (downloaded ? downloaded.url : currentFile.remoteUrl);
+    if (!Number(currentFile.Mediafile_id)) {
+      currentFile.Mediafile_id = Date.now();
+    }
+    // console.log("Showing file:", this.currentIndex, currentFile);
+    // console.log(this.filesData);
 
-		if (!playUrl) {
-			// nothing to play — skip to next
-			this.nextSlideAndShow();
-			return;
-		}
 
-		if (currentFile.type === 'video') {
-			// update the <video> element's src directly
-			setTimeout(() => {
-				const videoEl = this.videoElRef?.nativeElement ?? document.getElementById('media-video') as HTMLVideoElement | null;
-				if (videoEl) {
-					// If the same src is set, re-load to avoid black screen on some engines
-					if (videoEl.src !== playUrl) {
-						videoEl.src = playUrl;
-					} else {
-						videoEl.load();
-					}
-					videoEl.currentTime = 0;
-					videoEl.play().catch(err => console.warn('Autoplay blocked', err));
-					videoEl.onended = () => this.nextSlideAndShow();
-				} else {
-					// fallback: try next
-					this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 5000);
-				}
-			});
-		} else if (currentFile.type === 'image') {
-			// show image for fixed duration
-			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
-		} else if (currentFile.type === 'youtube') {
-			if (!isOffline) {
-				this.resetPlayerForYouTubeForCurrentIndex();
-				// YouTube component will emit videoEnded
-			} else {
-				// skip youtube when offline
-				this.nextSlideAndShow();
-			}
-		} else if (currentFile.type === 'pdf') {
-			// pdf viewer will call next via event binding
-		} else {
-			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
-		}
-	}
+    if (currentFile.type === 'video') {
+      setTimeout(() => {
+        const videoEl = document.getElementById('media-video') as HTMLVideoElement;
+        if (!videoEl) {
+          console.warn('Video element not found');
+          return;
+        }
+        videoEl.pause();
+        videoEl.removeAttribute('src');
+        videoEl.src =  currentFile.Url;
+        videoEl.currentTime = 0;
+        videoEl.load();
+        videoEl.onended = () => {
+          // console.log('🎬 Video ended, moving to next slide');
+          this.nextSlideAndShow();
+          videoEl.onended = null;
+        };
 
+
+        let attempts = 0;
+        const maxAttempts = 3;
+        videoEl.play();
+        const tryPlay = async () => {
+          attempts++;
+          try {
+            await videoEl.play();
+            console.log('Video started (attempt ' + attempts + ')');
+          } catch (err) {
+            console.warn(` Autoplay attempt ${attempts} failed`, err);
+
+
+            if (!videoEl.muted) {
+              videoEl.muted = true;
+              tryPlay();
+            } else if (attempts < maxAttempts) {
+              setTimeout(tryPlay, 500);
+            } else {
+              console.error('Video cannot play after multiple attempts', err);
+
+            }
+          }
+        };
+
+        videoEl.addEventListener('canplaythrough', tryPlay, { once: true });
+
+        videoEl.onerror = null;
+
+        videoEl.onerror = () => {
+          const mediaError = videoEl.error;
+          let errorMsg = 'Unknown video error';
+
+          if (mediaError) {
+            switch (mediaError.code) {
+              case mediaError.MEDIA_ERR_ABORTED:
+                errorMsg = 'Video playback aborted.';
+                break;
+              case mediaError.MEDIA_ERR_NETWORK:
+                errorMsg = 'Network error while loading video.';
+                break;
+              case mediaError.MEDIA_ERR_DECODE:
+                errorMsg = 'Video decoding error.';
+                break;
+              case mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+
+                errorMsg = 'Video format not supported or file missing.';
+                this.nextSlideAndShow();
+                break;
+            }
+          }
+
+          console.error('Video failed to load', {
+            src: videoEl.currentSrc || currentFile.Url,
+            error: errorMsg,
+          });
+
+          this.toastService.error(errorMsg);
+
+
+        };
+      });
+
+    }
+    else if (currentFile.type === 'image') {
+      this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
+    } else if (currentFile.type === 'youtube') {
+        this.nextSlideAndShow();
+      this.resetPlayerForYouTubeForCurrentIndex();
+    } else if (currentFile.type === 'pdf') {
+    } else {
+      this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
+    }
+  }
 	private nextSlideAndShow() {
 		clearTimeout(this.autoplayTimer);
 		if (!this.filesData || !this.filesData.length) return;
