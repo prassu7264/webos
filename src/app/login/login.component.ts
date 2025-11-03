@@ -32,7 +32,9 @@ export class LoginComponent implements OnInit, AfterViewInit {
 	isOpenSwalAlert: boolean = false;
 	type: any;
 	text: any;
+	pollInterval: any;
 	isExistedCalled = false;
+	isNewRegistration: boolean = false;
 	isAnypopped = false;
 	version = clienturl.CURRENT_VERSION();
 	contact: any = "Lumocast Digital Signage Pvt Ltd | Support@Cansignage.Com | +91 91523 98498";
@@ -51,7 +53,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 			deviceCode: ['', [Validators.required, Validators.pattern(/^IQW[0-9]+$/i)]]
 		});
 
-		let username = localStorage.getItem('username') || "IQW00000";
+		let username = localStorage.getItem('username') || "";
 		if (username) {
 			this.deviceForm.get('deviceCode')?.setValue(username);
 		}
@@ -63,10 +65,17 @@ export class LoginComponent implements OnInit, AfterViewInit {
 			}
 		});
 
+		// Start polling only after video played or QR activated
 		if (this.isVideoPlayed) {
-			this.checkDeviceAndNavigate();
-			setInterval(() => this.checkDeviceAndNavigate(), 1000);
+			this.startPolling();
 		}
+	}
+
+	startPolling() {
+		if (this.pollInterval) clearInterval(this.pollInterval);
+
+		this.checkDeviceAndNavigate();
+		this.pollInterval = setInterval(() => this.checkDeviceAndNavigate(), 3000);
 	}
 
 	ngAfterViewInit(): void {
@@ -82,55 +91,86 @@ export class LoginComponent implements OnInit, AfterViewInit {
 				this.isVideoPlayed = true;
 				sessionStorage.setItem("isVideoPlayed", this.isVideoPlayed);
 			}, 1000);
+
 			this.checkDeviceAndNavigate();
+			this.startPolling(); //  Start polling after splash
 		});
+
 	}
 
 	private checkDeviceAndNavigate(): void {
-		if (this.dialog.openDialogs.length > 0) {
+
+		// Block form input when popup open
+		if (this.dialog.openDialogs.length > 0 || this.isOpenSwalAlert) {
 			this.isAnypopped = true;
-			this.deviceForm.get('deviceCode')?.disable();
+			this.deviceForm.disable();
 		} else {
 			this.isAnypopped = false;
-			this.deviceForm.get('deviceCode')?.enable();
+			this.deviceForm.enable();
 		}
 
-
+		// Ensure UID exists
 		if (!this.deviceUID) return;
 
 		this.authService.isExistedDevice(this.deviceUID).subscribe((res: any) => {
-			if (res?.status === "success") {
-				const { client_status, device_status, isexpired } = res;
-				if (client_status && device_status && !isexpired) {
-					sessionStorage.setItem("device", JSON.stringify(res));
-					sessionStorage.setItem("username", res.username);
-					if (!this.isExistedCalled) {
-						this.toastService.success("Device verified successfully!!");
-						this.isExistedCalled = true;
-					}
-					this.router.navigate(['player']);
-				} else {
-					this.type = !client_status
-						? "Approval Pending...!"
-						: isexpired
-							? "Subscription Expired...!"
-							: "Approval Pending...!";
-					this.text = !client_status
-						? "Please wait until your profile is approved by admin."
-						: isexpired
-							? "Subscription expired Please contact admin."
-							: "Please wait until your device is approved by admin.";
-					this.isOpenSwalAlert = true;
-				}
-			} else {
+
+			// API failed / network issue
+			if (res?.status !== "success") {
 				this.isOpenSwalAlert = false;
 				if (!this.isExistedCalled) {
-					this.toastService.error(res?.message || "Device verification failed!!");
+					this.toastService.error(res?.message || "Device verification failed");
 					this.isExistedCalled = true;
 				}
+				return;
+			}
+
+			const { client_status, device_status, isexpired } = res;
+
+			//  Approved Device
+			if (client_status && device_status && !isexpired) {
+				sessionStorage.setItem("device", JSON.stringify(res));
+				sessionStorage.setItem("username", res.username);
+				clearInterval(this.pollInterval);
+
+				if (!this.isExistedCalled) {
+					this.toastService.success("Device Verified! Redirecting...");
+					this.isExistedCalled = true;
+				}
+
+				this.router.navigate(['player']);
+				return;
+			}
+
+			// Device disabled by admin
+			if (!client_status && !device_status) {
+				clearInterval(this.pollInterval);
+				this.isOpenSwalAlert = false;
+				this.toastService.error("Device Disabled by Admin");
+				sessionStorage.clear();
+				this.router.navigate(['login']);
+				return;
+			}
+
+			//  Subscription Expired
+			if (isexpired) {
+				this.type = "Subscription Expired!";
+				this.text = "Please contact support to renew subscription.";
+				this.isOpenSwalAlert = true;
+				return;
+			}
+
+			//  Approval Pending
+			if (this.isNewRegistration) {
+				this.type = "Approval Pending...!";
+				this.text = "Please wait until admin approves your device.";
+				this.isOpenSwalAlert = true;
+			} else {
+				// Device is known – DO NOT show popup
+				this.isOpenSwalAlert = false;
 			}
 		});
 	}
+
 
 	private generateQRCode(uid: string): void {
 		const qrcodeEl = document.getElementById("qrcode");
@@ -150,21 +190,35 @@ export class LoginComponent implements OnInit, AfterViewInit {
 	}
 
 	submit(): void {
+		this.isAnypopped = true;   // Disable the input after submit Form
 		if (!this.deviceForm.valid || !this.deviceUID) {
 			this.toastService.info('Invalid form');
 			return;
 		}
 
+		this.isNewRegistration = true;  // user manually submitting code
+
 		const code = this.deviceForm.value.deviceCode;
+
 		this.authService.signup(code, this.deviceUID).subscribe((res: any) => {
 			if (res?.status === 'Failed') {
 				this.toastService.error(res.message);
 			} else {
-				this.toastService.success(res.message);
-				this.checkDeviceAndNavigate();
+				this.toastService.success("Device Registered Successfully!");
+
+				if (res?.device_uid) {
+					this.deviceUID = res.device_uid;
+				}
+
 				this.isExistedCalled = false;
+				this.startPolling();
 			}
 		});
+	}
+
+
+	ngOnDestroy(): void {
+		if (this.pollInterval) clearInterval(this.pollInterval);
 	}
 
 }
