@@ -91,6 +91,11 @@
   white-space: nowrap;
 }
 
+.scroll-wrapper.hidden-init {
+  visibility: hidden;
+}
+
+
 /* left-to-right */
 @keyframes marquee-left {
   from {

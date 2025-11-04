@@ -13,7 +13,7 @@
 </div> -->
 
 
-<div *ngIf="scrollers.length" #scrollWrapper class="scroll-wrapper">
+<div *ngIf="scrollers.length" #scrollWrapper class="scroll-wrapper" [ngClass]="{'hidden-init': !animationReady}">
   <div #scrollTrack class="scroll-track" [class.left]="scrollers[0].direction === 'left'"
     [class.right]="scrollers[0].direction === 'right'" [class.up]="scrollers[0].direction === 'up'"
     [class.down]="scrollers[0].direction === 'down'">

@@ -179,16 +179,6 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
 				this.isExistedCalled = true;
 
-				console.log("Approval Pending hit", {
-					isNewRegistration: this.isNewRegistration,
-					isExistedCalled: this.isExistedCalled
-				});
-
-				// Show popup only once
-				if (!this.isExistedCalled) {
-					console.log("doesnt work!!")
-				}
-
 				return;
 			}
 
