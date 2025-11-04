@@ -39,6 +39,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 	version = clienturl.CURRENT_VERSION();
 	contact: any = "Lumocast Digital Signage Pvt Ltd | Support@Cansignage.Com | +91 91523 98498";
 
+
 	constructor(
 		private deviceInfoService: DeviceInfoService,
 		private authService: AuthService,
@@ -62,8 +63,16 @@ export class LoginComponent implements OnInit, AfterViewInit {
 			if (uid) {
 				this.deviceUID = uid;
 				this.generateQRCode(uid);
+
+				//  Ensure QR registration behaves same as manual registration
+				this.isNewRegistration = true;
+
+				// Trigger approval check immediately after QR scan
+				this.isExistedCalled = false;   // reset so popup will show
+				// this.checkDeviceAndNavigate();
 			}
 		});
+
 
 		// Start polling only after video played or QR activated
 		if (this.isVideoPlayed) {
@@ -75,7 +84,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 		if (this.pollInterval) clearInterval(this.pollInterval);
 
 		this.checkDeviceAndNavigate();
-		this.pollInterval = setInterval(() => this.checkDeviceAndNavigate(), 3000);
+		this.pollInterval = setInterval(() => this.checkDeviceAndNavigate(), 2000);
 	}
 
 	ngAfterViewInit(): void {
@@ -160,11 +169,30 @@ export class LoginComponent implements OnInit, AfterViewInit {
 			}
 
 			//  Approval Pending
-			if (this.isNewRegistration) {
+			// Approval Pending (QR + Manual)
+			// Approval Pending
+			if (client_status === true && device_status === false && !isexpired) {
+
 				this.type = "Approval Pending...!";
 				this.text = "Please wait until admin approves your device.";
 				this.isOpenSwalAlert = true;
-			} else {
+
+				this.isExistedCalled = true;
+
+				console.log("Approval Pending hit", {
+					isNewRegistration: this.isNewRegistration,
+					isExistedCalled: this.isExistedCalled
+				});
+
+				// Show popup only once
+				if (!this.isExistedCalled) {
+					console.log("doesnt work!!")
+				}
+
+				return;
+			}
+
+			else {
 				// Device is known – DO NOT show popup
 				this.isOpenSwalAlert = false;
 			}
