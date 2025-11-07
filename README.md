@@ -50,19 +50,19 @@ ares-setup-device
 
 Build the Angular application with production settings:
 
-ng build --output-path=./iqwebos-webos/www --configuration production
+ng build --output-path=./iqwebos/www --configuration production
 
-This generates all the static files required for WebOS in ./iqwebos-webos/www.
+This generates all the static files required for WebOS in ./iqwebos/www.
 
 ## 2. Navigate to Project Folder
 
-cd ./webos/
+cd ./iqwebos/
 
 ## 3. Package the WebOS App
 
 Create a .ipk package:
 
-ares-package ./webos/ --no-minify
+ares-package ./iqwebos/ --no-minify
 
 --no-minify keeps the source readable for debugging.
 
@@ -92,7 +92,7 @@ Opens Web Inspector for debugging JavaScript, CSS, and network requests.
 
 After making changes, rebuild the app:
 
-ng build --output-path=./webos/www --configuration production
+ng build --output-path=./iqwebos/www --configuration production
 
 Then reinstall and launch:
 
