@@ -10,9 +10,12 @@
   "uiRevision": 2,
   "supportFullscreen": true,
   "largeIcon": "icon.png",
+  "disableBackHistoryAPI": true,
   "requiredPermissions": [
     "accesswebosservice",
-    "public"
+    "public",
+    "webos.permission.applicationManager",
+    "webos.permission.INTERNET"
   ],
   "permissions": [
     "systeminfo",

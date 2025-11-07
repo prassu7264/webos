@@ -59,3 +59,9 @@
   height: 100vw !important;
   overflow: hidden !important;
 }
+
+
+.rotated {
+  transform: rotate(90deg); /* Equal to rotateZ(45deg) */
+  background-color: pink;
+}

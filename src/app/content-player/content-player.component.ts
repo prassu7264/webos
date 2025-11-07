@@ -304,10 +304,10 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 			const norm = (remoteUrl || '').split('?')[0];
 
 			// --- Skip YouTube items ALWAYS ---
-			if (remoteUrl.includes('youtube.com') || remoteUrl.includes('youtu.be')) {
-				console.warn(" Skipping YouTube content:", remoteUrl);
-				return null;
-			}
+			// if (remoteUrl.includes('youtube.com') || remoteUrl.includes('youtu.be')) {
+			// 	console.warn(" Skipping YouTube content:", remoteUrl);
+			// 	return null;
+			// }
 
 			const downloaded = downloadedMap[norm] ?? downloadedMap[remoteUrl];
 

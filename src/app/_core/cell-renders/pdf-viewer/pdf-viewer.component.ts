@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { PdfLoadedEvent } from 'ngx-extended-pdf-viewer';
 
 @Component({
@@ -28,6 +28,19 @@ export class PdfViewerComponent implements OnChanges, OnDestroy {
 			setTimeout(() => (this.pdfUrl = this.url), 5);
 		}
 	}
+	@HostListener('window:keydown', ['$event'])
+	onKeyDown(event: KeyboardEvent) {
+		const pdfKeys = [
+			'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+			'PageUp', 'PageDown', ' ' // space
+		];
+
+		if (pdfKeys.includes(event.key)) {
+			event.preventDefault();
+			// DO NOT stopPropagation — app still receives keys
+		}
+	}
+
 
 	afterLoadComplete(pdf: PdfLoadedEvent) {
 		// reset slideshow for new PDF

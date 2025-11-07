@@ -23,34 +23,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 	constructor(private dialog: MatDialog, private router: Router) { }
 
 	ngOnInit() {
-		this.router.events.subscribe(event => {
-			if (event instanceof NavigationEnd) {
-				this.isLoginPage = event.urlAfterRedirects.includes('/login');
-
-				if (this.isLoginPage) {
-					history.pushState(null, '', location.href);
-					window.onpopstate = () => {
-						history.pushState(null, '', location.href);
-						this.exitApp();
-					};
-				}
-			}
-		});
 
 		this.registerBackButtonTrap();
-
-		//  Real TV remote back trap
-		if ((window as any).webOS && typeof (window as any).webOS.platformBack === 'function') {
-			(window as any).webOS.platformBack = () => {
-				console.log(' TV Remote back trapped');
-				this.exitApp();
-			};
-		} else if ((window as any).webOS && (window as any).webOSSystem) {
-			(window as any).webOSSystem.platformBack = () => {
-				console.log(' TV Remote back trapped (System)');
-				this.exitApp();
-			};
-		}
 	}
 
 
@@ -70,14 +44,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 		}
 	}
 
-	get isOnline(): boolean {
-		return navigator.onLine;
-	}
-
-	goOffline() {
-		this.router.navigate(['/offline-player']);
-	}
-
 	openInstallDialog(): void {
 		if (this.dialogRef) return;
 		this.dialogRef = this.dialog.open(this.deviceSettings, { width: 'fit-content' });
@@ -85,7 +51,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	@HostListener('window:keydown', ['$event'])
-	handleKeyDown(event: KeyboardEvent) {
+	handleKeyboardEvent(event: KeyboardEvent) {
+		if (event.keyCode === 461) { // Key code for Back button on LG webO`0
+			event.preventDefault(); // Prevent default browser/webOS behavior
+			console.log('Back button pressed!');
+		}
 		switch (event.keyCode) {
 			case 13:
 				const now = Date.now();
@@ -96,10 +66,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 				}
 				break;
 			case 10009: // Tizen Back
+			case 10182:
 			case 461:   // webOS Back
 			case 27:    // ESC / Browser
 				event.preventDefault();
 				event.stopPropagation();
+				console.log("Back Button Works!!")
 
 				// Delay slightly to prevent multiple triggers
 				setTimeout(() => this.exitApp(), 150);
