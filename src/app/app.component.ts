@@ -1,30 +1,29 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, HostListener, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { SpeedTestService } from './_core/services/speed-test.service';
-
-
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private lastEnterPressTime = 0;
   netspeed: any;
   intervalId: any;
   isLoginPage = false;
   @ViewChild('exitconfirm', { static: true }) exitconfirm!: TemplateRef<any>;
   @ViewChild('DeviceSettings', { static: true }) deviceSettings!: TemplateRef<any>;
-  dialogRef: any
-  constructor(private dialog: MatDialog, private speedTestService: SpeedTestService) {
+
+  dialogRef: any;
+  isPendrive: any = false;
+  constructor(private dialog: MatDialog,) {
+
   }
-  async ngOnInit() {
-    window.onpopstate = () => {
-      history.go(1);
-      this.exitApp();
-    };
-    
+  ngAfterViewInit(): void {
+
+  }
+  ngOnInit() {
+
+
   }
 
   ngOnDestroy(): void {
@@ -41,7 +40,8 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
     this.dialogRef = this.dialog.open(this.deviceSettings, {
-      width: '100vw'
+      width: '45vw',
+      data: { isLoginPage: this.isLoginPage, isPendrive: this.isPendrive }
     });
 
     this.dialogRef.afterClosed().subscribe((result: any) => {
@@ -61,16 +61,18 @@ export class AppComponent implements OnInit, OnDestroy {
         const now = Date.now();
         const delta = now - this.lastEnterPressTime;
         this.lastEnterPressTime = now;
-        console.log("Enter key pressed");
-        if (delta < 1000) {
-
-          if (sessionStorage.getItem("device")) {
-            this.openInstallDialog();
-            // setTimeout(() => {
-            //   this.dialogRef.close();
-            //   Swal.close();
-            // }, 60000);
-          }
+        console.log("Enter key pressedffff");
+        if (delta < 2200) {
+          this.isPendrive = sessionStorage.getItem("ModeConfiguration") === "true"
+          // if (sessionStorage.getItem("device")) {
+          this.openInstallDialog();
+          // setTimeout(() => {
+          //   this.dialogRef.close();
+          //   Swal.close();
+          // }, 60000);
+          // } else if (this.isPendrive || this.isLoginPage) {
+          //   this.openInstallDialog();
+          // }
 
         }
         break;
@@ -78,14 +80,13 @@ export class AppComponent implements OnInit, OnDestroy {
         this.exitApp();
         break;
       default:
-        console.log('Key pressed, keyCode(default):', event.keyCode);
+      // console.log('Key pressed, keyCode(default):', event.keyCode);
 
     }
   }
 
   exitApp() {
     try {
-
       if (typeof window !== "undefined" && (window as any).webOS?.platformBack) {
         console.log("Exiting via webOS.platformBack()");
         (window as any).webOS.platformBack();
@@ -149,10 +150,9 @@ export class AppComponent implements OnInit, OnDestroy {
       } else {
         event.preventDefault();
         event.stopPropagation();
-        console.log('Blocked key:', event.key);
+        // console.log('Blocked key:', event.key);
       }
       return;
     }
   }
-
 }

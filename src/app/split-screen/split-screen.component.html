@@ -1,10 +1,9 @@
-<!-- app.component.html -->
-
 <div class="screen-container">
     <gridster [options]="options" class="drag-content drag-handler">
-        <gridster-item *ngFor="let item of zoneinfo" [item]="item" class="grid-item">
+        <gridster-item *ngFor="let item of zoneinfo; trackBy: trackById" [item]="item" class="grid-item">
             <div class="widget-content">
-                <app-content-player [filesData]="item?.media_list"></app-content-player>
+                <app-content-player [filesData]="item?.media_list" [splitScreenList]="splitScreenList"  [attr.key]="item.id + '-' + item.media_list?.length"
+                    [zoneId]="item.id" (zoneComplete)="onZoneComplete($event)"></app-content-player>
             </div>
         </gridster-item>
     </gridster>
@@ -18,12 +17,48 @@
         </ng-container>
     </div>
 
-    <!-- Top Scroller -->
-    <app-scroller *ngIf="topScrollers.length" [scrollers]="topScrollers" class="ticker-bar top-ticker">
+
+    <app-scroller [scrollers]="topScrollers" class="ticker-bar top-ticker" *ngIf="!isPendriveMode">
     </app-scroller>
 
-    <!-- Bottom Scroller -->
-    <app-scroller *ngIf="bottomScrollers.length" [scrollers]="bottomScrollers" class="ticker-bar bottom-ticker">
+
+    <app-scroller [scrollers]="bottomScrollers" class="ticker-bar bottom-ticker" *ngIf="!isPendriveMode">
     </app-scroller>
 
 </div>
+
+<ng-template #exitconfirm>
+    <h2 mat-dialog-title class="text-center" style="color: #ff4081;">Are you sure ?</h2>
+    <mat-dialog-content class="mat-typography">
+        <h4 class="text-center">Do you want to exit the application?</h4>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close cdkFocusInitial>
+            Close
+        </button>
+        <button mat-raised-button [mat-dialog-close]="true">Yes, exit</button>
+    </mat-dialog-actions>
+</ng-template>
+<ng-template #pendriveErrorDialog let-data>
+    <h2 mat-dialog-title>{{ data.title }}</h2>
+    <mat-dialog-content>
+        <p style="color: white;">{{ data.message }}</p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button (click)="exitPendrive()">Exit pendrive mode</button>
+    </mat-dialog-actions>
+</ng-template>
+<!-- <div *ngIf="errorMsg" class="error">{{ errorMsg }}</div>
+
+<div *ngIf="images.length === 0 && !errorMsg">
+    No images found in downloads.
+</div>
+
+<div *ngIf="images.length > 0" class="images">
+    <div *ngFor="let img of images" class="image-item">
+        <img [src]="img.uri" [alt]="img.name" />
+
+        <video [src]="img.uri" muted autoplay class="image-item"></video>
+        <p>{{ img.name }}</p>
+    </div>
+</div> -->

@@ -3,11 +3,9 @@
 <div *ngIf="scrollers.length" #scrollWrapper class="scroll-wrapper">
   <div #scrollTrack class="scroll-track" [class.left]="scrollers[0].direction === 'left'"
     [class.right]="scrollers[0].direction === 'right'">
-
     <div class="scroll-item" *ngFor="let s of scrollers" [style.color]="s.fncolor" [style.fontSize]="s.fnsize + 'px'"
       [style.fontFamily]="s.font_folder" [style.background]="s.bgcolor" [style.padding]="calcPadding(s)">
       {{ s.message }}
     </div>
-
   </div>
 </div>

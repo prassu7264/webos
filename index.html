@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tizen AVPlay Example</title>
+    <style>
+        body { background-color: black; color: white; font-family: sans-serif; }
+        .controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); text-align: center; }
+        input[type="text"] { width: 400px; padding: 10px; font-size: 16px; margin-right: 10px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        h1 { text-align: center; margin-top: 20px; }
+    </style>
+    <!-- Tizen Web API library reference, handled by Tizen Studio -->
+    <script type="text/javascript" src="$WEBAPIS/webapis/webapis.js"></script>
+</head>
+<body>
+
+    <!--
+    The object element is essential for enabling the native AVPlayer.
+    It should be added to the document to specify the player area.
+    -->
+    <object id="avplayer" type="application/avplayer" style="position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;"></object>
+
+    <div class="controls">
+        <h1>Tizen AVPlayer</h1>
+        <input type="text" id="videoUrlInput" placeholder="Enter video URL here..." value="https://www.youtube.com/watch?v=JZCUL_5U8l4">
+        <button onclick="loadAndPlayVideo()">Play</button>
+        <button onclick="pauseVideo()">Pause</button>
+        <button onclick="stopVideo()">Stop</button>
+    </div>
+
+    <script>
+        // A variable to hold the Tizen AVPlay API instance.
+        let avplay;
+
+        // An object to manage the player's event listeners.
+        const listener = {
+            onstreamcompleted: () => {
+                console.log("✅ AVPlay stream completed");
+                stopVideo();
+            },
+            onerror: (err) => {
+                console.error("❌ AVPlay error:", err);
+                alert("An error occurred during playback. Check console for details.");
+                stopVideo();
+            },
+            onbufferingstart: () => {
+                console.log("Buffering started...");
+            },
+            onbufferingcomplete: () => {
+                console.log("Buffering complete.");
+            },
+            oncurrentplaytime: (time) => {
+                // console.log("Current playtime:", time);
+            }
+        };
+
+        /**
+         * Initializes and starts video playback using the Tizen AVPlay API.
+         * The video URL is read from the input field.
+         */
+        function loadAndPlayVideo() {
+            const videoUrl = document.getElementById('videoUrlInput').value;
+
+            if (!videoUrl) {
+                alert("Please enter a valid video URL.");
+                return;
+            }
+
+            try {
+                // Check for the Tizen API and avplay object
+                if (typeof webapis === 'undefined' || !webapis.avplay) {
+                    console.error('❌ Tizen AVPlay not available');
+                    alert("Tizen AVPlay is not available on this device.");
+                    return;
+                }
+
+                // Get the AVPlay instance
+                avplay = webapis.avplay;
+
+                // Stop and close any previous playback session
+                if (avplay.getState() !== 'NONE') {
+                    avplay.stop();
+                    avplay.close();
+                }
+
+                // Open the media resource
+                avplay.open(videoUrl);
+
+                // Set the listener for playback events
+                avplay.setListener(listener);
+
+                // Set the display rectangle to fullscreen (1920x1080 is Tizen's base resolution)
+                avplay.setDisplayRect(0, 0, 1920, 1080);
+
+                // Prepare the playback asynchronously
+                avplay.prepareAsync(() => {
+                    console.log('🎥 AVPlay prepared, starting...');
+                    avplay.play();
+                }, (error) => {
+                    console.error('❌ AVPlay prepare failed:', error);
+                    alert("Failed to prepare video playback.");
+                });
+
+            } catch (err) {
+                console.error('💥 Exception in loadAndPlayVideo:', err);
+                alert("An unexpected error occurred.");
+            }
+        }
+
+        /**
+         * Pauses the currently playing video.
+         */
+        function pauseVideo() {
+            if (avplay && avplay.getState() === 'PLAYING') {
+                avplay.pause();
+                console.log('Video paused.');
+            }
+        }
+
+        /**
+         * Stops the video playback and resets the player.
+         */
+        function stopVideo() {
+            if (avplay && avplay.getState() !== 'NONE') {
+                avplay.stop();
+                avplay.close();
+                console.log('Video stopped.');
+                avplay = null; // Clear the reference
+            }
+        }
+    </script>
+
+</body>
+</html>

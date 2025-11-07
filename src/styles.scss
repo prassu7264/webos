@@ -119,6 +119,7 @@ body {
   box-shadow: var(--mdc-protected-button-focus-container-elevation, 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12));
   background-color: #ff4081 !important;
   color: #fff !important;
+  font-weight: bold !important;
 }
 
 // .mat-step-header.cdk-keyboard-focused,
@@ -127,6 +128,12 @@ body {
 // .mat-step-header:hover[aria-disabled=false] {
 //      background-color: #378cee !important;
 // }
+
+.toast-container .ngx-toastr {
+  min-width: 350px !important;
+  // max-width: 450px !important; 
+  margin-top: 5%;
+}
 
 ::ng-deep ngx-extended-pdf-viewer {
   height: 100vh !important;
@@ -147,6 +154,77 @@ gridster {
 .mat-mdc-unelevated-button.mat-mdc-button-base,
 .mat-mdc-outlined-button.mat-mdc-button-base {
   height: 30px !important;
+  border: 2px solid hsl(0, 0%, 100%);
+
+}
+
+.menu .mat-mdc-button.mat-mdc-button-base,
+.menu .mat-mdc-raised-button.mat-mdc-button-base,
+.menu .mat-mdc-unelevated-button.mat-mdc-button-base,
+.menu .mat-mdc-outlined-button.mat-mdc-button-base {
+  height: auto !important;
+  border-radius: 1em;
+}
+
+
+.menu .mat-mdc-raised-button.mdc-ripple-upgraded--background-focused,
+.menu .mat-mdc-raised-button:not(.mdc-ripple-upgraded):focus {
+  box-shadow: var(--mdc-protected-button-focus-container-elevation, 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12));
+  color: #fff !important;
+  border: 2px solid #61aff8;
+  font-weight: 500;
+  animation: glow 1s forwards;
+}
+
+.menu .mat-mdc-raised-button,
+.menu .mat-mdc-raised-button:not(.mdc-ripple-upgraded) {
+  box-shadow: var(--mdc-protected-button-focus-container-elevation, 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12));
+  background: linear-gradient(165deg, #2e6ba3, #0c3552, #0c3552) !important;
+  color: #fff !important;
+  font-weight: 400;
+  border: 2px solid #2e6ba3;
+  font-size: large;
+}
+
+@keyframes glow {
+  from {
+    box-shadow:
+      0 0 10px rgba(97, 175, 248, 0.4),
+      0 0 18px rgba(97, 175, 248, 0.5);
+  }
+
+  to {
+    box-shadow:
+      0 0 10px rgba(97, 175, 248, 0.4),
+      0 0 18px rgba(97, 175, 248, 0.5);
+
+  }
+}
+
+// .cdk-overlay-pane.userManual {
+//   height: 100vh !important;
+//   width: 100vw !important;
+//   max-width: 100vw !important;
+
+// }
+
+.cdk-overlay-pane.userManual .mat-mdc-dialog-container .mdc-dialog__surface {
+  overflow: hidden;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__title {
+  color: #fff !important;
+}
+
+.mat-mdc-dialog-content>h4 {
+  color: #fff !important;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  // background: linear-gradient(135deg, #224b72, #0c3552) !important;
+  background: linear-gradient(165deg, #1e557c, #0c3552) !important;
+  border: #0084ff 1px solid;
+  border-radius: 10px !important;
 }
 
 #viewerContainer {

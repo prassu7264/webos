@@ -1,12 +1,17 @@
 ng build --output-path=./iqwebos-webos/www --configuration production
 
+
+
 cd ./iqwebos-webos/
 
-ares-package . --no-minify
+ares-package ./iqwebos-webos/ --no-minify
 
 ares-launch --device tv com.smarttv.launchapp
 
 ares-inspect --device tv --reload com.smarttv.launchapp 
 
+ares-install --remove com.smarttv.launchapp 
 
 ng build --output-path=./iqtizen/www --configuration production
+
+ng build  --output-path=./iqtizen/www --configuration tizen
