@@ -1,0 +1,15 @@
+<!-- Fixed logo -->
+<img *ngIf="currentLogo" [src]="currentLogo" alt="Scroller Logo" class="fixed-logo" [style.height]="getLogoSize()" />
+
+<!-- Only current scroller -->
+<div *ngIf="currentScroller" #scrollWrapper class="scroll-wrapper" [ngClass]="{'hidden-init': !animationReady}">
+  <div #scrollTrack class="scroll-track" [class.left]="currentScroller.direction === 'left'"
+    [class.right]="currentScroller.direction === 'right'" [class.up]="currentScroller.direction === 'up'"
+    [class.down]="currentScroller.direction === 'down'">
+    <div class="scroll-item" [style.color]="currentScroller.fncolor" [style.fontSize]="currentScroller.fnsize + 'px'"
+      [style.fontFamily]="currentScroller.font_folder" [style.background]="currentScroller.bgcolor"
+      [style.padding]="calcPadding(currentScroller)">
+      {{ currentScroller.message }}
+    </div>
+  </div>
+</div>

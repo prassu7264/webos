@@ -1,0 +1,95 @@
+.scroll-wrapper {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+}
+
+.scroll-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.scroll-track.left {
+  animation-name: marquee-left;
+}
+
+.scroll-track.right {
+  animation-name: marquee-right;
+}
+
+.scroll-track.up {
+  flex-direction: column; /* stack vertically */
+  animation-name: marquee-up;
+}
+
+.scroll-track.down {
+  flex-direction: column; /* stack vertically */
+  animation-name: marquee-down;
+}
+
+.scroll-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.scroll-wrapper.hidden-init {
+  visibility: hidden;
+}
+
+/*  Fixed image positioning */
+.fixed-logo {
+  position: fixed; /* Always visible */
+  top: 0;
+  left: 0;
+  width: auto;
+  object-fit: contain;
+  z-index: 99999;
+  background: transparent;
+  pointer-events: none;
+  transition: height 0.3s ease;
+}
+
+
+/* left-to-right */
+@keyframes marquee-left {
+  from {
+    transform: translateX(var(--start, 100%));
+  }
+  to {
+    transform: translateX(calc(-1 * var(--trackWidth, 100%)));
+  }
+}
+
+/* right-to-left */
+@keyframes marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* bottom-to-top */
+@keyframes marquee-up {
+  from {
+    transform: translateY(var(--start, 100%));
+  }
+  to {
+    transform: translateY(calc(-1 * var(--trackHeight, 100%)));
+  }
+}
+
+/* top-to-bottom */
+@keyframes marquee-down {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
