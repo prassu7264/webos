@@ -43,11 +43,11 @@ export class AuthInterceptor implements HttpInterceptor {
         if (error instanceof HttpErrorResponse) {
           switch (error.status) {
             case 401:
-              this.router.navigate(['/login']);
+              // this.router.navigate(['/login']);
               handled = true;
               break;
             case 403:
-              this.router.navigate(['/login']);
+              // this.router.navigate(['/login']);
               handled = true;
               break;
           }

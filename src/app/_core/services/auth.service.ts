@@ -85,7 +85,7 @@ export class AuthService {
     }
 
     // Always clear session
-    sessionStorage.clear();
+    sessionStorage.removeItem("device");
     sessionStorage.setItem("isVideoPlayed", "true");
 
     console.log('Device UID:', deviceUID);

@@ -1,0 +1,7 @@
+<div class="youtube-player">
+    <iframe *ngIf="ytUrl" [src]="ytUrl" width="100%" height="100%" frameborder="0"
+        allow="autoplay; encrypted-media; fullscreen" allowfullscreen>
+    </iframe>
+
+    <p>{{ status }}</p>
+</div>

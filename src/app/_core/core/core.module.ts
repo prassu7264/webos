@@ -5,17 +5,28 @@ import { PdfViewerComponent } from '../cell-renders/pdf-viewer/pdf-viewer.compon
 import { GridsterModule } from 'angular-gridster2';
 import { YtplayerComponent } from '../cell-renders/ytplayer/ytplayer.component';
 import { NgxExtendedPdfViewerModule } from 'ngx-extended-pdf-viewer';
-import { YtubeplayerComponent } from '../cell-renders/ytubeplayer/ytubeplayer.component';
-import { MenuComponent } from '../_utils/menu/menu.component';
+
 import { MatMaterialModule } from '../mat-material/mat-material.module';
 import { ConnectionServiceModule } from 'ng-connection-service';
-
+import { Menu2Component } from '../_utils/menu2/menu2.component';
+import { UsermanualComponent } from '../_utils/usermanual/usermanual.component';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { Menu1Component } from '../_utils/menu1/menu1.component';
+import { MatSliderModule } from '@angular/material/slider';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { InlineProgressDialogComponent } from '../services/filesystem.service';
+import { VideoPlayerComponent } from '../cell-renders/video-player/video-player.component';
 @NgModule({
   declarations: [
     PdfViewerComponent,
     YtplayerComponent,
-    YtubeplayerComponent,
-    MenuComponent
+    Menu2Component,
+    UsermanualComponent,
+    Menu1Component,
+    InlineProgressDialogComponent,
+    VideoPlayerComponent
   ],
   imports: [
     CommonModule,
@@ -23,7 +34,12 @@ import { ConnectionServiceModule } from 'ng-connection-service';
     GridsterModule,
     NgxExtendedPdfViewerModule,
     MatMaterialModule,
-    ConnectionServiceModule
+    ConnectionServiceModule,
+    MatRadioModule,
+    MatSlideToggleModule,
+    MatSliderModule,
+    MatDialogModule,
+    MatProgressBarModule
   ],
   exports: [
     YouTubePlayerModule,
@@ -31,9 +47,14 @@ import { ConnectionServiceModule } from 'ng-connection-service';
     GridsterModule,
     YtplayerComponent,
     NgxExtendedPdfViewerModule,
-    YtubeplayerComponent,
-    MenuComponent,
-    MatMaterialModule
+    MatMaterialModule,
+    Menu2Component,
+    UsermanualComponent,
+    Menu1Component,
+    MatSliderModule,
+    MatDialogModule,
+    MatProgressBarModule,
+    VideoPlayerComponent
   ]
 })
 export class CoreModule { }
