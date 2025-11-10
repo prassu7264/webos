@@ -16,3 +16,106 @@
     object-fit: fill; // fits screen, crops if necessary
     transform: translate(-50%, -50%);
 }
+
+/* === BACKGROUND BLUR LAYER === */
+.unsupported-backdrop {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(14px) brightness(0.6);
+  -webkit-backdrop-filter: blur(14px) brightness(0.6);
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 2500;
+  animation: backdropFade 0.4s ease forwards;
+}
+
+@keyframes backdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* === UNSUPPORTED FILE MESSAGE BOX === */
+.unsupported-ui {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  background: linear-gradient(145deg, #2a2e33, #182c42);
+  border: 2px solid #3181b8;
+  border-radius: 16px;
+  padding: 40px 70px;
+  text-align: center;
+  color: white;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  z-index: 3000;
+  box-shadow:
+    0 0 10px rgba(5, 190, 252, 0.5),
+    0 0 25px rgba(0, 191, 255, 0.3),
+    inset 0 0 12px rgba(0, 191, 255, 0.2);
+  animation: fadeInZoom 0.6s ease forwards;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* === WARNING ICON === */
+.unsupported-ui .icon {
+  font-size: 60px;
+  color: #00bfff;
+  margin-bottom: 16px;
+  animation: pulseWarning 1.3s infinite alternate ease-in-out;
+  text-shadow:
+    0 0 15px rgba(5, 190, 252, 0.8),
+    0 0 25px rgba(0, 191, 255, 0.5);
+    margin-bottom: 70px;
+}
+
+/* === ICON PULSE ANIMATION === */
+@keyframes pulseWarning {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* === FADE-IN BOX === */
+@keyframes fadeInZoom {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* === OPTIONAL BORDER GLOW === */
+.unsupported-ui::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  border: 2px solid rgba(0, 191, 255, 0.4);
+  filter: blur(6px);
+  opacity: 0.7;
+  animation: pulseGlow 2s infinite alternate;
+}
+
+@keyframes pulseGlow {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
