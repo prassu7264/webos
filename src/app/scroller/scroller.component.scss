@@ -2,18 +2,24 @@
   overflow: hidden;
   width: 100%;
   position: relative;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .scroll-track {
   display: inline-flex;
   white-space: nowrap;
-  animation-timing-function: linear;
   animation-iteration-count: infinite;
+  transform: translate3d(0, 0, 0);
+  animation-timing-function: linear !important;
+  backface-visibility: hidden;
+  will-change: transform;
+  perspective: 1000px;
 }
 
-.scroll-track.left {
-  animation-name: marquee-left;
-}
+
+.scroll-track.left { animation-name: marquee-left; }
+.scroll-track.right { animation-name: marquee-right; }
 
 
 .scroll-item {
@@ -29,11 +35,8 @@
 
 
 /* left-to-right */
+
 @keyframes marquee-left {
-  from {
-    transform: translateX(var(--start, 100%));
-  }
-  to {
-    transform: translateX(calc(-1 * var(--trackWidth, 100%)));
-  }
+  from { transform: translate3d(var(--start, 100%), 0, 0); }
+  to { transform: translate3d(calc(-1 * var(--trackWidth, 100%)), 0, 0); }
 }

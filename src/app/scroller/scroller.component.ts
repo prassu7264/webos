@@ -1,6 +1,4 @@
-
 import { Component, Input, OnInit, OnDestroy, AfterViewInit, OnChanges, SimpleChanges, ElementRef, ViewChild } from '@angular/core';
-
 
 export interface ScrollerItem {
 	id: number;
@@ -26,10 +24,8 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 	@Input() scrollers: ScrollerItem[] = [];
 	@ViewChild('scrollWrapper') scrollWrapper!: ElementRef;
 	@ViewChild('scrollTrack') scrollTrack!: ElementRef;
-
 	public baseDuration: number = 20; // default fallback duration
 	animationReady = false;
-
 
 	ngOnInit() { }
 
@@ -51,59 +47,58 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			const track = this.scrollTrack?.nativeElement as HTMLElement;
 			if (!wrapper || !track || !this.scrollers.length) return;
 
-			const currentScroller = this.scrollers[0]; // use first active scroller
-			const direction = currentScroller.direction || 'left';
+			const s = this.scrollers[0];
+			const direction = s.direction || 'left';
+			const baseSpeed = Number(s.scrlspeed) || 10;
 
-			// --- Centralized scroller speed logic ---
-			const baseSpeed = Number(currentScroller.scrlspeed) || 10; // from API
+			// --- DOM measurements ---
 			const wrapperWidth = wrapper.offsetWidth;
+			const wrapperHeight = wrapper.offsetHeight;
 			const trackWidth = track.scrollWidth;
+			const trackHeight = track.scrollHeight;
 
-			console.log(wrapperWidth + " wrapperWidth")
-			console.log(trackWidth + " trackWidth")
+			// --- Smooth speed mapping (balanced for WebOS hardware) ---
+			// scrlspeed from API (5 = slow, 10 = medium, 15 = fast)
+			const pxPerSec = 140; // smoother, hardware-friendly scale
 
-			// Determine general speed category
-			let speedFactor;
-			if (baseSpeed == 5) speedFactor = 0.6;      // low
-			else if (baseSpeed == 10) speedFactor = 1.0; // medium
-			else speedFactor = 1.6;                      // high
-
-			
-			// Base pixel speed (px/sec)
-			// const pixelSpeed = 150 * speedFactor * (1 + Math.log10(lengthFactor + 1) * 0.3);
-			const pixelSpeed = 155;
-			if(baseSpeed == 5) console.log(pixelSpeed + " Low pixelSpeed");
-			else if(baseSpeed == 10 ) console.log(pixelSpeed + " Medium pixelSpeed");
-			else console.log(pixelSpeed + " High pixelSpeed");
-			
-
-			// Calculate total distance & duration
-			let totalDistance: number;
-			let duration: number;
-
+			// --- Compute distance + duration ---
+			let totalDistance: number, duration: number;
 			if (direction === 'left' || direction === 'right') {
 				totalDistance = wrapperWidth + trackWidth;
-				duration = totalDistance / pixelSpeed;
-				track.style.setProperty('--start', wrapperWidth + 'px');
-				track.style.setProperty('--trackWidth', trackWidth + 'px');
+				duration = totalDistance / pxPerSec;
+				track.style.setProperty('--start', `${wrapperWidth}px`);
+				track.style.setProperty('--trackWidth', `${trackWidth}px`);
 			} else {
-				const wrapperHeight = wrapper.offsetHeight;
-				const trackHeight = track.scrollHeight;
 				totalDistance = wrapperHeight + trackHeight;
-				duration = totalDistance / pixelSpeed;
-				track.style.setProperty('--start', wrapperHeight + 'px');
-				track.style.setProperty('--trackHeight', trackHeight + 'px');
+				duration = totalDistance / pxPerSec;
+				track.style.setProperty('--start', `${wrapperHeight}px`);
+				track.style.setProperty('--trackHeight', `${trackHeight}px`);
 			}
+			
+			// --- Apply styles ---
+			track.style.animationDuration = `${duration.toFixed(2)}s`;
+			track.style.animationTimingFunction = 'linear';
+			track.style.willChange = 'transform';
+			track.style.transform = 'translate3d(0, 0, 0)';
 
-			// Set animation duration dynamically
-			this.baseDuration = duration;
-			track.style.animationDuration = `${this.baseDuration}s`;
+			// --- Debug info for your logs ---
+			console.log('Scroller config:', {
+				direction,
+				baseSpeed,
+				pxPerSec,
+				duration,
+				totalDistance,
+				wrapperWidth,
+				trackWidth
+			});
 
+			// --- Start animation on next frame for stability ---
 			requestAnimationFrame(() => {
 				this.animationReady = true;
 			});
-		});
+		}, 300);
 	}
+
 
 	public calcPadding(scroller: ScrollerItem): string {
 		const size = Number(scroller.fnsize) || 20;

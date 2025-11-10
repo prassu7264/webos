@@ -1,4 +1,4 @@
-/* split-screen.component.ts */
+
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { GridsterConfig, GridsterItem } from 'angular-gridster2';
 import { AuthService } from '../_core/services/auth.service';
@@ -9,6 +9,7 @@ import { ConnectionService, ConnectionState } from 'ng-connection-service';
 import { WebosDownloadService } from '../_core/services/webos-download.service';
 
 declare var webOS: any;
+
 @Component({
 	selector: 'app-split-screen',
 	templateUrl: './split-screen.component.html',
@@ -26,9 +27,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	currentIndex = 0;
 	private autoplayTimer?: any;
 	private redirecting = false;
-	scrollers: any[] = [];
-	topScrollers: any[] = [];
-	bottomScrollers: any[] = [];
 
 	constructor(
 		private authService: AuthService,
@@ -128,9 +126,8 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private loadMediaFiles() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
 			this.splitScreen = res?.layout_list ?? [];
-			this.scrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
 
-			// collect all media and push to background downloader (service dedupes)
+			// collect all media and push to background downloader
 			const allMedia: any[] = [];
 			(this.splitScreen || []).forEach((l: any) => {
 				(l.zonelist || []).forEach((z: any) => {
@@ -138,12 +135,8 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				});
 			});
 
-			// single call - service will ignore already downloaded or in-progress items
-			// console.log("From Split screen inside of loadMediaFiles()")
 			this.wds.backgroundDownloadList(allMedia);
 
-			this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
-			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			this.currentIndex = 0;
 			this.showCurrentSlide();
 		});
@@ -152,13 +145,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private checkForUpdates() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
 			const newLayout = res?.layout_list ?? [];
-			const newScrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
 
-			if (JSON.stringify(this.scrollers) !== JSON.stringify(newScrollers)) {
-				this.scrollers = newScrollers;
-				this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
-				this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
-			}
 			if (JSON.stringify(this.splitScreen) !== JSON.stringify(newLayout)) {
 				this.splitScreen = newLayout;
 
@@ -169,10 +156,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 					});
 				});
 
-				// avoid duplicate downloads — service will dedupe
-				// console.log("From Split screen inside of checkForUpdates()")
 				this.wds.backgroundDownloadList(allMedia);
-
 				this.currentIndex = 0;
 				this.showCurrentSlide();
 			}
