@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-youtube-player',
@@ -11,16 +12,17 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy, OnChanges {
   @Input() index!: number;
   @Input() loop: boolean = false;
   @Output() videoEnded = new EventEmitter<{ success: boolean; index: number }>();
-
+  isOpenSwalAlert: any
   ytUrl: SafeResourceUrl | null = null;
   status = '🎥 Waiting for video events...';
   private messageHandler = (event: MessageEvent) => this.handleMessage(event);
 
-  constructor(private sanitizer: DomSanitizer) { }
+  constructor(private sanitizer: DomSanitizer, private toastService: ToastService) { }
 
   ngOnInit(): void {
     this.updateUrl();
     window.addEventListener('message', this.messageHandler);
+    // this.isOpenSwalAlert = true;
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -37,7 +39,8 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy, OnChanges {
     if (!this.url) return;
     const videoId = this.getYouTubeVideoID(this.url);
     let loop = this.loop ? 1 : 0;
-    const safeUrl = `https://aar.ridsys.in/yt.html?v=${videoId}&loop=${loop}`;
+    // const safeUrl = `https://aar.ridsys.in/yt.html?v=${videoId}&loop=${loop}`;
+    const safeUrl = `https://ds.iqtv.in/youtube/yt.html?v=${videoId}&loop=${loop}`;
     this.ytUrl = this.sanitizer.bypassSecurityTrustResourceUrl(safeUrl);
   }
 
@@ -54,6 +57,14 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy, OnChanges {
       this.status = '🏁 Ended';
       this.videoEnded.emit({ success: true, index: this.index });
     }
+    // if (event.data.type === 'YT_VIDEO_OFFLINE') {
+    //   this.isOpenSwalAlert = true;
+    // }
+    // if (event.data.type === 'YT_VIDEO_ONLINE') {
+    //   this.isOpenSwalAlert = false;
+    //   this.toastService.info("Back online! Reconnecting...")
+
+    // }
   }
 
   private getYouTubeVideoID(url: any): string | null {
