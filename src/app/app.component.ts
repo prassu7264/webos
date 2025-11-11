@@ -28,7 +28,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 	constructor(private dialog: MatDialog, private router: Router, private authService: AuthService, private deviceInfoService: DeviceInfoService) { }
 
 	ngOnInit() {
-		this.registerBackButtonTrap();
 		this.device = JSON.parse(sessionStorage.getItem('device') || '{}');
 		//  Check device validity first
 		if (this.device?.androidid) {
@@ -57,15 +56,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 		});
 	}
 
-	private registerBackButtonTrap() {
-		if (this.isBackHandlerRegistered) return;
-		this.isBackHandlerRegistered = true;
-		window.onpopstate = () => {
-			history.pushState(null, '', location.href);
-			this.exitApp();
-		};
-		history.pushState(null, '', location.href);
-	}
 
 	private loadScrollers() {
 		if (!this.device) return;
@@ -158,10 +148,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	@HostListener('window:keydown', ['$event'])
 	handleKeyboardEvent(event: KeyboardEvent) {
-		if (event.keyCode === 461) { // Key code for Back button on LG webO`0
-			event.preventDefault(); // Prevent default browser/webOS behavior
-			console.log('Back button pressed!');
-		}
 		switch (event.keyCode) {
 			case 13:
 				const now = Date.now();
@@ -177,10 +163,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 			case 27:    // ESC / Browser
 				event.preventDefault();
 				event.stopPropagation();
-				console.log("Back Button Works!!")
+				// console.log("Back Button Works!!" + event.key + "  "+event.keyCode)
 
-				// Delay slightly to prevent multiple triggers
-				setTimeout(() => this.exitApp(), 150);
+				if(this.dialog.openDialogs.length > 0){
+					this.dialog.closeAll();
+				}else{
+					// Delay slightly to prevent multiple triggers
+					setTimeout(() => this.exitApp(), 150);
+				}
+
 				break;
 
 		}
@@ -188,15 +179,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	exitApp() {
 		try {
-			const openDialogs = this.dialog.openDialogs;
-
-			//  1. If any dialog is open, close the topmost and stop
-			if (openDialogs.length > 0) {
-				const topDialog = openDialogs[openDialogs.length - 1];
-				topDialog.close();
-				return;
-			}
-
 			//  2. If no dialogs open, only then show Exit confirmation
 			if (!this.exitDialogRef || !this.exitDialogRef.getState || this.exitDialogRef.getState() === 0) {
 				// Make sure Exit popup is not already open
@@ -216,20 +198,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
 				this.exitDialogRef.afterClosed().subscribe((result: any) => {
 					this.exitDialogRef = null; //  clear reference
-
-					if (result) {
-						try {
-							if ((window as any).tizen) {
-								(window as any).tizen.application.getCurrentApplication().exit();
-							} else if ((window as any).webOS) {
-								(window as any).webOS.platformBack();
-							} else {
-								window.close();
-							}
-						} catch (e) {
-							window.close();
-						}
-					}
 				});
 			}
 		} catch (err) {

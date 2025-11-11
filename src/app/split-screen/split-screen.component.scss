@@ -1,4 +1,4 @@
-/* app.component.scss */
+/* split-screen.component.scss */
 .drag-content {
     // padding: 2px;
     min-height: 100vh;
@@ -18,22 +18,4 @@
   position: relative;   /* allows scrollers to overlay */
   width: 100%;
   height: 100%;
-}
-
-
-
-.ticker-bar {
-  position: absolute;   /* overlay on top of grid */
-  left: 0;
-  width: 100%;
-  z-index: 9999;
-  pointer-events: none; /* don’t block video or media clicks */
-}
-
-.top-ticker {
-  top: 0;
-}
-
-.bottom-ticker {
-  bottom: 0;
 }
