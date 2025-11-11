@@ -443,7 +443,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
     this.showCurrentSlide();
   }
 
-  // ✅ Utilities
   private toMediaSet(data: any) {
     return new Set(
       data.flatMap((layout: any) =>
@@ -453,7 +452,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
       )
     );
   }
-
   private deepCopy(obj: any) {
     return JSON.parse(JSON.stringify(obj));
   }

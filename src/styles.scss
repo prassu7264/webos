@@ -149,6 +149,14 @@ gridster {
   background-color: black !important;
 }
 
+gridster .gridster-column,
+gridster .gridster-row,
+gridster-item,
+gridster-item.gridster-item-resizing,
+gridster-item.gridster-item-moving {
+  transition: unset !important;
+}
+
 .mat-mdc-button.mat-mdc-button-base,
 .mat-mdc-raised-button.mat-mdc-button-base,
 .mat-mdc-unelevated-button.mat-mdc-button-base,

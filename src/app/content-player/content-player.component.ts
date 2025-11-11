@@ -37,7 +37,7 @@ export class ContentPlayerComponent implements OnChanges {
 
   ngOnInit(): void {
     // console.log(this.filesData);
-    this.loadMediaFiles();
+    // this.loadMediaFiles();
     this.subscription.add(
       this.connectionService.monitor().pipe(
         tap((newState: ConnectionState) => {
@@ -46,16 +46,26 @@ export class ContentPlayerComponent implements OnChanges {
               ...ffile,
               downloadedUrl: ffile.Url
             }));
-            this.showCurrentSlide();
+            // this.showCurrentSlide();
           }
         })
       ).subscribe()
     );
+
     this.connectionService.monitor().pipe(
       tap((newState: ConnectionState) => {
+        const currentFile = this.filesData[this.currentIndex];
         this.isOnline = newState.hasNetworkConnection;
+        if (currentFile.type === 'video') {
+          const videoEl = document.getElementById('media-video') as HTMLVideoElement;
+          if (this.isOnline) {
+            videoEl.play();
+          } else {
+            videoEl.pause();
+          }
+        }
       })
-    ).subscribe()
+    ).subscribe();
   }
 
   ngOnDestroy(): void {
@@ -126,100 +136,86 @@ export class ContentPlayerComponent implements OnChanges {
       currentFile.Mediafile_id = Date.now();
     }
     console.log("Showing file:", this.currentIndex, currentFile);
-    // console.log(this.filesData);
-
     this.activePlayingId = currentFile.Mediafile_id;
     if (currentFile.type === 'video') {
-      setTimeout(() => {
-        const videoEl = document.getElementById('media-video') as HTMLVideoElement;
-        if (!videoEl) {
-          console.warn('Video element not found');
-          return;
+      const videoEl = document.getElementById('media-video') as HTMLVideoElement;
+
+      if (!videoEl) {
+        console.warn('Video element not found');
+        return;
+      }
+      // videoEl.removeAttribute('src');
+      // videoEl.src = currentFile.downloadedUrl || currentFile.Url;
+      videoEl.currentTime = 0;
+      // videoEl.load();
+      videoEl.onended = () => {
+        this.nextSlideAndShow();
+        videoEl.onended = null;
+      };
+
+      let attempts = 0;
+      const maxAttempts = 3;
+      const tryPlay = async () => {
+        attempts++;
+        try {
+          await videoEl.play();
+          console.log('✅ Video started (attempt ' + attempts + ')');
+        } catch (err) {
+          console.warn(`⚠️ Autoplay attempt ${attempts} failed`, err);
+          if (!videoEl.muted) {
+            videoEl.muted = true;
+            tryPlay();
+          } else if (attempts < maxAttempts) {
+            setTimeout(tryPlay, 2000);
+          } else {
+            console.error('Video cannot play after multiple attempts', err);
+
+          }
         }
-        videoEl.pause();
-        videoEl.removeAttribute('src');
-        videoEl.src = currentFile.downloadedUrl || currentFile.Url;
-        videoEl.currentTime = 0;
-        videoEl.load();
-        videoEl.onended = () => {
-          // console.log('🎬 Video ended, moving to next slide');
-          this.nextSlideAndShow();
-          videoEl.onended = null;
-        };
+      };
 
+      videoEl.addEventListener('canplaythrough', tryPlay, { once: true });
+      videoEl.onerror = null;
 
-        let attempts = 0;
-        const maxAttempts = 3;
-        videoEl.play();
-        const tryPlay = async () => {
-          attempts++;
-          try {
-            await videoEl.play();
-            console.log('✅ Video started (attempt ' + attempts + ')');
-          } catch (err) {
-            console.warn(`⚠️ Autoplay attempt ${attempts} failed`, err);
+      videoEl.onerror = () => {
+        const mediaError = videoEl.error;
+        let errorMsg = 'Unknown video error';
+        if (mediaError) {
+          switch (mediaError.code) {
+            case mediaError.MEDIA_ERR_ABORTED:
+              errorMsg = 'Video playback aborted.';
+              break;
+            case mediaError.MEDIA_ERR_NETWORK:
+              errorMsg = 'Network error while loading video.';
+              break;
+            case mediaError.MEDIA_ERR_DECODE:
+              errorMsg = 'Video decoding error.';
+              break;
+            case mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
 
-
-            if (!videoEl.muted) {
-              videoEl.muted = true;
-              tryPlay();
-            } else if (attempts < maxAttempts) {
-              setTimeout(tryPlay, 500);
-            } else {
-              console.error('Video cannot play after multiple attempts', err);
-
-            }
+              errorMsg = 'Video format not supported or file missing.';
+              if (currentFile?.downloadedUrl && currentFile?.downloadedUrl?.startsWith("file://")) {
+                const tizenPath = currentFile.downloadedUrl;
+                this.fsService.deleteFile(tizenPath)
+                  .then(() => {
+                    console.log("Deleted file:", tizenPath);
+                  })
+                  .catch(err => {
+                    console.error("Failed to delete file:", tizenPath, err);
+                  });
+              }
+              this.nextSlideAndShow();
+              break;
           }
-        };
+        }
 
-        videoEl.addEventListener('canplaythrough', tryPlay, { once: true });
+        console.error('Video failed to load', {
+          src: videoEl.currentSrc || currentFile.Url,
+          error: errorMsg,
+        });
 
-        videoEl.onerror = null;
-
-        videoEl.onerror = () => {
-          const mediaError = videoEl.error;
-          let errorMsg = 'Unknown video error';
-
-          if (mediaError) {
-            switch (mediaError.code) {
-              case mediaError.MEDIA_ERR_ABORTED:
-                errorMsg = 'Video playback aborted.';
-                break;
-              case mediaError.MEDIA_ERR_NETWORK:
-                errorMsg = 'Network error while loading video.';
-                break;
-              case mediaError.MEDIA_ERR_DECODE:
-                errorMsg = 'Video decoding error.';
-                break;
-              case mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-
-                errorMsg = 'Video format not supported or file missing.';
-                if (currentFile?.downloadedUrl && currentFile?.downloadedUrl?.startsWith("file://")) {
-
-                  const tizenPath = currentFile.downloadedUrl;
-                  this.fsService.deleteFile(tizenPath)
-                    .then(() => {
-                      console.log("Deleted file:", tizenPath);
-                    })
-                    .catch(err => {
-                      console.error("Failed to delete file:", tizenPath, err);
-                    });
-                }
-                this.nextSlideAndShow();
-                break;
-            }
-          }
-
-          console.error('Video failed to load', {
-            src: videoEl.currentSrc || currentFile.Url,
-            error: errorMsg,
-          });
-
-          this.toastService.error(errorMsg);
-
-
-        };
-      });
+        this.toastService.error(errorMsg);
+      };
     }
     else if (currentFile.type === 'image') {
       this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
@@ -257,15 +253,6 @@ export class ContentPlayerComponent implements OnChanges {
       setTimeout(() => this.showCurrentSlide(), 80);
     }
 
-  }
-
-
-  nextSlide() {
-    clearTimeout(this.autoplayTimer);
-    if (!this.filesData.length) return;
-    this.currentIndex = (this.currentIndex + 1) % this.filesData.length;
-    this.resetPlayerForYouTubeForCurrentIndex();
-    setTimeout(() => this.showCurrentSlide(), 80);
   }
 
   onVideoEnded(event: { success: boolean; message?: string }, type: any) {
