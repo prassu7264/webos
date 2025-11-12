@@ -1,4 +1,5 @@
 <!-- content-player.component.html -->
+ 
 <div class="fade-wrapper" [class.fade-active]="isFading">
     <div [ngSwitch]="filesData[currentIndex]?.type" class="media-container">
         <img *ngSwitchCase="'image'" style="height: 100%; width: 100%; object-fit: fill !important;"

@@ -44,14 +44,22 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 
 	/** Smooth switching between playlist types */
 	private triggerSmoothSwitch(callback: () => void) {
+		if (this.isSwitching) return;
 		this.isSwitching = true;
+
+		// Start fade-out + overlay
 		this.isFading = true;
+
 		setTimeout(() => {
-			callback();
-			this.isFading = false;
-			setTimeout(() => (this.isSwitching = false), 500);
-		}, 400);
+			callback(); // load new files
+			// Small delay so DOM updates before fade-in
+			setTimeout(() => {
+				this.isFading = false;
+				setTimeout(() => (this.isSwitching = false), 400); // overlay auto fades out
+			}, 100);
+		}, 500);
 	}
+
 
 	private loadMediaFiles() {
 		this.filesData = this.prepareFiles(this.filesData);
