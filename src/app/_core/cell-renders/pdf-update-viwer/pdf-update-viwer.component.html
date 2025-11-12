@@ -1,0 +1,9 @@
+<div class="pdf-container">
+  <canvas #pdfCanvas id="pdf-render"></canvas>
+</div>
+
+<div class="pdfcontroller">
+  <button class="btn btn-primary" (click)="prevPage()">Prev Page</button>
+  <p class="page-info">{{ pageNum }} / {{ totalPages }}</p>
+  <button class="btn btn-primary" (click)="nextPage()">Next Page</button>
+</div>
