@@ -530,7 +530,7 @@ web_project("tizen") {
       "//www/favicon.ico",
       "//www/fontawesome-webfont.8a7cb27d142e3e19.ttf",
       "//www/index.html",
-      "//www/main.5094688e93e6fcfe.js",
+      "//www/main.7b4689391cb72c67.js",
       "//www/polyfills.839713ddaeaddd73.js",
       "//www/runtime.c7087dd255c352bc.js",
       "//www/styles.3724374b45d1de1c.css",

@@ -37,33 +37,33 @@ export class ContentPlayerComponent implements OnChanges {
 
   ngOnInit(): void {
     // console.log(this.filesData);
-    // this.loadMediaFiles();
-    this.subscription.add(
-      this.connectionService.monitor().pipe(
-        tap((newState: ConnectionState) => {
-          if (newState.hasNetworkConnection) {
-            this.filesData = this.filesData.map(ffile => ({
-              ...ffile,
-              downloadedUrl: ffile.Url
-            }));
-            // this.showCurrentSlide();
-          }
-        })
-      ).subscribe()
-    );
+    this.loadMediaFiles();
+    // this.subscription.add(
+    //   this.connectionService.monitor().pipe(
+    //     tap((newState: ConnectionState) => {
+    //       if (newState.hasNetworkConnection) {
+    //         this.filesData = this.filesData.map(ffile => ({
+    //           ...ffile,
+    //           downloadedUrl: ffile.Url
+    //         }));
+    //         // this.showCurrentSlide();
+    //       }
+    //     })
+    //   ).subscribe()
+    // );
 
     this.connectionService.monitor().pipe(
       tap((newState: ConnectionState) => {
         const currentFile = this.filesData[this.currentIndex];
         this.isOnline = newState.hasNetworkConnection;
-        if (currentFile.type === 'video') {
-          const videoEl = document.getElementById('media-video') as HTMLVideoElement;
-          if (this.isOnline) {
-            videoEl.play();
-          } else {
-            videoEl.pause();
-          }
-        }
+        // if (currentFile.type === 'video') {
+        //   const videoEl = document.getElementById('media-video') as HTMLVideoElement;
+        //   if (this.isOnline) {
+        //     videoEl.play();
+        //   } else {
+        //     videoEl.pause();
+        //   }
+        // }
       })
     ).subscribe();
   }
@@ -144,9 +144,11 @@ export class ContentPlayerComponent implements OnChanges {
         console.warn('Video element not found');
         return;
       }
-      // videoEl.removeAttribute('src');
-      // videoEl.src = currentFile.downloadedUrl || currentFile.Url;
+      videoEl.removeAttribute('src');
+      videoEl.src = currentFile.downloadedUrl || currentFile.Url;
       videoEl.currentTime = 0;
+      console.log(videoEl.src);
+
       // videoEl.load();
       videoEl.onended = () => {
         this.nextSlideAndShow();
