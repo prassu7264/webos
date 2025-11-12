@@ -27,6 +27,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	constructor(private dialog: MatDialog, private router: Router, private authService: AuthService, private deviceInfoService: DeviceInfoService) { }
 
+	
+
 	ngOnInit() {
 		this.device = JSON.parse(sessionStorage.getItem('device') || '{}');
 		//  Check device validity first
