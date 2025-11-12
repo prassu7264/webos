@@ -121,12 +121,6 @@ body {
   color: #fff !important;
 }
 
-// .mat-step-header.cdk-keyboard-focused,
-// .mat-step-header.cdk-program-focused,
-// .mat-step-header:hover:not([aria-disabled]),
-// .mat-step-header:hover[aria-disabled=false] {
-//      background-color: #378cee !important;
-// }
 
 ::ng-deep ngx-extended-pdf-viewer {
   height: 100vh !important;
@@ -194,4 +188,12 @@ gridster {
 #viewer{
   width: 100vw !important;
   height: fit-content !important;
+}
+
+gridster .gridster-column,
+gridster .gridster-row,
+gridster-item,
+gridster-item.gridster-item-resizing,
+gridster-item.gridster-item-moving {
+  transition: unset !important;
 }
