@@ -59,7 +59,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 
 			// --- Smooth speed mapping (balanced for WebOS hardware) ---
 			// scrlspeed from API (5 = slow, 10 = medium, 15 = fast)
-			const pxPerSec = 140; // smoother, hardware-friendly scale
+			const pxPerSec = 120; // smoother, hardware-friendly scale
 
 			// --- Compute distance + duration ---
 			let totalDistance: number, duration: number;
@@ -80,17 +80,6 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			track.style.animationTimingFunction = 'linear';
 			track.style.willChange = 'transform';
 			track.style.transform = 'translate3d(0, 0, 0)';
-
-			// --- Debug info for your logs ---
-			console.log('Scroller config:', {
-				direction,
-				baseSpeed,
-				pxPerSec,
-				duration,
-				totalDistance,
-				wrapperWidth,
-				trackWidth
-			});
 
 			// --- Start animation on next frame for stability ---
 			requestAnimationFrame(() => {
