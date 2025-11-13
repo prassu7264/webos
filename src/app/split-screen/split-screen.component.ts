@@ -36,6 +36,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		private wds: WebosDownloadService
 	) {
 		this.options = {
+			displayGrid: 'none',
 			draggable: { enabled: false },
 			resizable: { enabled: false },
 			pushItems: true,

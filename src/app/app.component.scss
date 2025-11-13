@@ -33,10 +33,10 @@
 }
 
 .ticker-bar {
-  position: fixed;   /* overlay on top of grid */
+  position: absolute;   /* overlay on top of grid */
   left: 0;
   width: 100%;
-  z-index: 9999;
+  z-index: 9999 !important;
   pointer-events: none; /* don’t block video or media clicks */
   will-change: transform;      /* hint GPU acceleration */
   transform: translateZ(0);    /* create a GPU layer */

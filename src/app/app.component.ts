@@ -44,11 +44,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 			}
 		});
 
-		if (this.device?.androidid) {
-			this.loadScrollers();
-			this.startScrollerUpdates();
-		}
-
 		// Listen for device UID changes (if it’s set later)
 		this.deviceInfoService.deviceUID$.subscribe(uid => {
 			if (uid && (!this.device.androidid || this.device.androidid !== uid)) {

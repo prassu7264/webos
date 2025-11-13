@@ -1,4 +1,4 @@
-//  content-player.component.ts */
+// content-player.component.ts
 import { Component, Input, ViewChild, ElementRef, OnChanges, SimpleChanges, OnDestroy, AfterViewInit } from '@angular/core';
 import { ToastService } from '../_core/services/toast.service';
 import { YtplayerComponent } from '../_core/cell-renders/ytplayer/ytplayer.component';
@@ -21,14 +21,13 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 
 	playerRecreateKey: string | null = null;
 
-	// --- Added fields for unsupported tracking ---
 	unsupportedCount = 0;
 	totalMediaCount = 0;
 	showUnsupportedOverlay = false;
 
-	// --- New transition flags ---
 	isFading = false;
 	isSwitching = false;
+	url: string | null = null;
 
 	constructor(private toastService: ToastService, private downloadService: WebosDownloadService) { }
 
@@ -38,28 +37,50 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		}
 	}
 
-	ngAfterViewInit(): void {
-		// reserved for future
-	}
+	ngAfterViewInit(): void { }
 
-	/** Smooth switching between playlist types */
 	private triggerSmoothSwitch(callback: () => void) {
 		if (this.isSwitching) return;
 		this.isSwitching = true;
-
-		// Start fade-out + overlay
 		this.isFading = true;
 
 		setTimeout(() => {
-			callback(); // load new files
-			// Small delay so DOM updates before fade-in
+			callback();
 			setTimeout(() => {
 				this.isFading = false;
-				setTimeout(() => (this.isSwitching = false), 400); // overlay auto fades out
+				setTimeout(() => (this.isSwitching = false), 400);
 			}, 100);
 		}, 500);
 	}
 
+	// --- CACHE LOGIC START ---
+	private async cachePlaylistSequentially(files: any[]) {
+		console.log('🧩 Starting cache for playlist...');
+		for (const file of files) {
+			if (!file || !file.Url) continue;
+			const urlString = String(file.Url);
+			console.log(urlString)
+			const normUrl = urlString.split('?')[0];
+			const isCached = this.downloadService.isFileCached(normUrl);
+			if (!isCached) {
+				try {
+					await this.downloadService.cacheFile(normUrl, file.type);
+					console.log('✅ Cached:', normUrl);
+				} catch (err) {
+					console.warn('⚠️ Failed to cache', normUrl, err);
+				}
+			}
+		}
+		// Cleanup unused cache
+		this.downloadService.cleanupCacheExcept(
+			files
+				.map(f => (typeof f.Url === 'string' ? f.Url.split('?')[0] : ''))
+				.filter(Boolean)
+		);
+
+		console.log('🧹 Cache refresh complete.');
+	}
+	// --- CACHE LOGIC END ---
 
 	private loadMediaFiles() {
 		this.filesData = this.prepareFiles(this.filesData);
@@ -67,6 +88,10 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		this.totalMediaCount = this.filesData.length;
 		this.unsupportedCount = 0;
 		this.showUnsupportedOverlay = false;
+
+		// --- CACHE LOGIC: start caching sequentially ---
+		this.cachePlaylistSequentially(this.filesData);
+		// -----------------------------------------------
 
 		const remoteList = (this.filesData || []).map(f => ({ Url: f.Url, type: f.type }));
 		this.downloadService.backgroundDownloadList(remoteList);
@@ -81,11 +106,15 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 
 		return (files || []).map(file => {
 			const remoteUrl = (file?.Url || '').toString();
-			const norm = (remoteUrl || '').split('?')[0];
+			const norm = typeof remoteUrl === 'string' ? remoteUrl.split('?')[0] : '';
 			const downloaded = downloadedMap[norm] ?? downloadedMap[remoteUrl];
 			if (isOffline && !downloaded) return null;
 
-			const playUrl = downloaded ? downloaded.url : remoteUrl;
+			// --- CACHE LOGIC: prefer cached file if available ---
+			const cached = this.downloadService.getCachedFile(norm);
+			const playUrl = typeof cached === 'string' ? cached : downloaded && typeof downloaded.url === 'string' ? downloaded.url : remoteUrl;
+			// ----------------------------------------------------
+
 			const lurl = (remoteUrl || '').toLowerCase();
 			let type: any = 'other';
 			if (/\.(mp4|mov|avi|mkv|webm)$/i.test(lurl)) type = 'video';
@@ -164,25 +193,17 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 							case mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
 								errorMsg = 'Video format not supported or file missing.';
 								this.unsupportedCount++;
-
 								const total = this.totalMediaCount || this.filesData.length || 0;
 
-								// CASE 1: only one media and it's unsupported → show full UI
 								if (total === 1) {
 									this.showUnsupportedOverlay = true;
-								}
-								// CASE 2: multiple media → show only toast, not overlay
-								else if (this.unsupportedCount < total) {
+								} else if (this.unsupportedCount < total) {
 									this.toastService.error('Unsupported file format');
-								}
-								// CASE 3: all media unsupported → show full UI
-								else if (this.unsupportedCount === total) {
+								} else if (this.unsupportedCount === total) {
 									this.showUnsupportedOverlay = true;
 								}
-
 								this.nextSlideAndShow();
 								break;
-
 						}
 					}
 
@@ -191,11 +212,9 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 						error: errorMsg,
 					});
 
-					// keep your existing toast for all other errors
 					if (mediaError && mediaError.code !== mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
 						this.toastService.error(errorMsg);
 					}
-
 				};
 			});
 		} else if (currentFile.type === 'image') {
@@ -240,7 +259,6 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		}
 	}
 
-
 	onVideoEnded(event: { success?: boolean; message?: string } = { success: true }) {
 		if (event && event.success === false && event.message) {
 			this.toastService.error(event.message);
@@ -273,6 +291,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		if (u.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/)) return 'image';
 		return 'other';
 	}
+
 	ngOnDestroy(): void {
 		clearTimeout(this.autoplayTimer);
 		this.destroyed = true;

@@ -1,0 +1,166 @@
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+  }
+
+  .pdf-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Full screen height */
+    width: 100vw; /* Full screen width */
+    background-color: black;
+  }
+
+  canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .pdfcontroller {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    color: white;
+  }
+</style>
+
+<div class="pdf-container">
+  <canvas id="pdf-render"></canvas>
+</div>
+
+<div class="pdfcontroller">
+  <button class="btn btn-primary" id="prev-page">Prev Page</button>
+  <p class="page-info" id="page-info">1 / 1</p>
+  <button class="btn btn-primary" id="next-page">Next Page</button>
+</div>
+
+<!-- ✅ Load pdf.js core + worker -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
+
+<script>
+  const url = 'https://ds.iqtv.in/iqsignage/4/3452/IQ_WORLD_38359683.pdf';
+
+  // ✅ Set worker source
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+  const canvas = document.querySelector('#pdf-render');
+  const ctx = canvas.getContext('2d');
+  const pageInfo = document.querySelector('#page-info');
+
+  let pdfDoc = null;
+  let pageNum = 1;
+  let pageIsRendering = false;
+  let pageNumIsPending = null;
+
+  const autoSwitchDelay = 5000; // 5 seconds per page
+  let autoSwitchInterval = null;
+
+  // ✅ Calculate dynamic scale for full screen rendering
+  function getScaleForFullscreen(page) {
+    const viewport = page.getViewport({ scale: 1 });
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const scaleX = screenWidth / viewport.width;
+    const scaleY = screenHeight / viewport.height;
+    return Math.min(scaleX, scaleY) * 2; // *2 = higher DPI rendering (HD quality)
+  }
+
+  // ✅ Render a specific page
+  async function renderPage(num) {
+    pageIsRendering = true;
+    const page = await pdfDoc.getPage(num);
+
+    const scale = getScaleForFullscreen(page);
+    const viewport = page.getViewport({ scale });
+
+    // Handle HiDPI / Retina displays
+    const outputScale = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
+    canvas.style.width = `${viewport.width}px`;
+    canvas.style.height = `${viewport.height}px`;
+
+    const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+
+    const renderCtx = {
+      canvasContext: ctx,
+      transform,
+      viewport,
+    };
+
+    await page.render(renderCtx).promise;
+
+    pageIsRendering = false;
+    pageInfo.textContent = `${num} / ${pdfDoc.numPages}`;
+
+    if (pageNumIsPending !== null) {
+      renderPage(pageNumIsPending);
+      pageNumIsPending = null;
+    }
+  }
+
+  function queueRenderPage(num) {
+    if (pageIsRendering) {
+      pageNumIsPending = num;
+    } else {
+      renderPage(num);
+    }
+  }
+
+  function startAutoSwitch() {
+    if (autoSwitchInterval) return;
+    autoSwitchInterval = setInterval(() => {
+      if (pageIsRendering) return;
+      if (pageNum < pdfDoc.numPages) {
+        pageNum++;
+      } else {
+        pageNum = 1;
+      }
+      queueRenderPage(pageNum);
+    }, autoSwitchDelay);
+  }
+
+  function stopAutoSwitch() {
+    clearInterval(autoSwitchInterval);
+    autoSwitchInterval = null;
+  }
+
+  // ✅ Manual navigation (optional)
+  document.querySelector('#prev-page').addEventListener('click', () => {
+    stopAutoSwitch();
+    if (pageNum <= 1) return;
+    pageNum--;
+    queueRenderPage(pageNum);
+  });
+
+  document.querySelector('#next-page').addEventListener('click', () => {
+    stopAutoSwitch();
+    if (pageNum >= pdfDoc.numPages) return;
+    pageNum++;
+    queueRenderPage(pageNum);
+  });
+
+  // ✅ Load and start
+  pdfjsLib.getDocument(url).promise.then((pdfDoc_) => {
+    pdfDoc = pdfDoc_;
+    renderPage(pageNum);
+    startAutoSwitch();
+  });
+
+  // ✅ Handle window resize (dynamic scaling)
+  window.addEventListener('resize', () => {
+    queueRenderPage(pageNum);
+  });
+</script>

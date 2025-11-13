@@ -7,15 +7,28 @@
 
 .grid-item {
     // border: 1px solid #ccc;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    cursor: move;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;          /* prevents content overflow */
+  width: 100%;
+  height: 100%;
+  font-weight: bold;
+  cursor: move;
 }
 
 .screen-container {
   position: relative;   /* allows scrollers to overlay */
   width: 100%;
   height: 100%;
+}
+
+.widget-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
