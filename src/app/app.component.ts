@@ -27,7 +27,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	constructor(private dialog: MatDialog, private router: Router, private authService: AuthService, private deviceInfoService: DeviceInfoService) { }
 
-	
+
 
 	ngOnInit() {
 		this.device = JSON.parse(sessionStorage.getItem('device') || '{}');
@@ -162,9 +162,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 				event.stopPropagation();
 				// console.log("Back Button Works!!" + event.key + "  "+event.keyCode)
 
-				if(this.dialog.openDialogs.length > 0){
+				if (this.dialog.openDialogs.length > 0) {
 					this.dialog.closeAll();
-				}else{
+				} else {
 					// Delay slightly to prevent multiple triggers
 					setTimeout(() => this.exitApp(), 150);
 				}
@@ -194,8 +194,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 				});
 
 				this.exitDialogRef.afterClosed().subscribe((result: any) => {
-					this.exitDialogRef = null; //  clear reference
+					if (result) {
+						try {
+							(window as any).webOS.platformBack();
+						} catch (e) {
+							window.close();
+						}
+					}
 				});
+
 			}
 		} catch (err) {
 			console.error("❌ exitApp error:", err);
