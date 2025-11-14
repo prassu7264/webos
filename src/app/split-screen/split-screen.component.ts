@@ -1,4 +1,4 @@
-
+/* split-screen.component.ts */
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { GridsterConfig, GridsterItem } from 'angular-gridster2';
 import { AuthService } from '../_core/services/auth.service';
@@ -9,7 +9,6 @@ import { ConnectionService, ConnectionState } from 'ng-connection-service';
 import { WebosDownloadService } from '../_core/services/webos-download.service';
 
 declare var webOS: any;
-
 @Component({
 	selector: 'app-split-screen',
 	templateUrl: './split-screen.component.html',
@@ -27,6 +26,11 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	currentIndex = 0;
 	private autoplayTimer?: any;
 	private redirecting = false;
+	scrollers: any[] = [];
+	topScrollers: any[] = [];
+	bottomScrollers: any[] = [];
+	zoneCompletionMap: { [zoneId: number]: boolean } = {};
+	refreshKey: number = 0;
 
 	constructor(
 		private authService: AuthService,
@@ -127,8 +131,9 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private loadMediaFiles() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
 			this.splitScreen = res?.layout_list ?? [];
+			this.scrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
 
-			// collect all media and push to background downloader
+			// collect all media and push to background downloader (service dedupes)
 			const allMedia: any[] = [];
 			(this.splitScreen || []).forEach((l: any) => {
 				(l.zonelist || []).forEach((z: any) => {
@@ -136,17 +141,31 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				});
 			});
 
+			// single call - service will ignore already downloaded or in-progress items
+			// console.log("From Split screen inside of loadMediaFiles()")
 			this.wds.backgroundDownloadList(allMedia);
 
+			this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
+			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			this.currentIndex = 0;
 			this.showCurrentSlide();
 		});
+	}
+	trackById(index: number, item: any): any {
+		console.log(item.id + "  " + item.media_list.length)
+		return item.id ?? index;
 	}
 
 	private checkForUpdates() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
 			const newLayout = res?.layout_list ?? [];
+			const newScrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
 
+			if (JSON.stringify(this.scrollers) !== JSON.stringify(newScrollers)) {
+				this.scrollers = newScrollers;
+				this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
+				this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
+			}
 			if (JSON.stringify(this.splitScreen) !== JSON.stringify(newLayout)) {
 				this.splitScreen = newLayout;
 
@@ -157,7 +176,10 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 					});
 				});
 
+				// avoid duplicate downloads — service will dedupe
+				// console.log("From Split screen inside of checkForUpdates()")
 				this.wds.backgroundDownloadList(allMedia);
+
 				this.currentIndex = 0;
 				this.showCurrentSlide();
 			}
@@ -169,11 +191,10 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		this.zoneinfo = [];
 		if (!this.splitScreen?.length) return;
 		this.zoneinfo = this.splitScreen[this.currentIndex]?.zonelist || [];
-		const layout_time = this.splitScreen[this.currentIndex]?.layout_duration ?? 10;
-
-		if (this.splitScreen.length > 1) {
-			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), layout_time * 1000);
-		}
+		console.log(this.zoneinfo);
+		// const layout_time = this.splitScreen[this.currentIndex]?.layout_duration ?? 10;
+		// Autoplay next slide (uncomment if needed)
+		// this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), layout_time * 1000);
 	}
 
 	private nextSlideAndShow() {
@@ -182,6 +203,16 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		this.currentIndex = (this.currentIndex + 1) % this.splitScreen.length;
 		this.showCurrentSlide();
 	}
+	onZoneComplete(zoneId: any) {
+		this.zoneCompletionMap[zoneId] = true;
+		const allCompleted = this.zoneinfo.every(zone => this.zoneCompletionMap[zone.id]);
+		console.log(this.zoneCompletionMap);
+		if (allCompleted && this.splitScreen.length > 1) {
+			this.nextSlideAndShow();
+			this.zoneCompletionMap = {}
+		}
+	}
+
 
 	getNetworkInfo() {
 		this.authService.getNetworkInfo(this.device).subscribe((res: any) => {

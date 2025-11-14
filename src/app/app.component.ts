@@ -1,8 +1,6 @@
 import { Component, ElementRef, HostListener, OnDestroy, OnInit, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Router, NavigationEnd } from '@angular/router';
-import { AuthService } from './_core/services/auth.service';
-import { DeviceInfoService } from './_core/services/device-info.service';
 
 @Component({
 	selector: 'app-root',
@@ -15,121 +13,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 	intervalId: any;
 	isLoginPage = false;
 	private isBackHandlerRegistered = false;
-	topScrollers: any[] = [];
-	bottomScrollers: any[] = [];
-	device: any;
-	scrollers: any[] = [];
-	scrollerInterval: any;
+
 	@ViewChild('exitconfirm', { static: true }) exitconfirm!: TemplateRef<any>;
 	@ViewChild('DeviceSettings', { static: true }) deviceSettings!: TemplateRef<any>;
 	dialogRef: any;
 	exitDialogRef: MatDialogRef<any> | null = null;
 
-	constructor(private dialog: MatDialog, private router: Router, private authService: AuthService, private deviceInfoService: DeviceInfoService) { }
+
+	constructor(private dialog: MatDialog, private router: Router) { }
+
+	ngOnInit() { }
 
 
-
-	ngOnInit() {
-		this.device = JSON.parse(sessionStorage.getItem('device') || '{}');
-		//  Check device validity first
-		if (this.device?.androidid) {
-			this.isExistedDevice(this.device.androidid);
-		}
-
-		//  Still listen for UID changes if it updates later
-		this.deviceInfoService.deviceUID$.subscribe(uid => {
-			if (uid && (!this.device.androidid || this.device.androidid !== uid)) {
-				this.device.androidid = uid;
-				this.isExistedDevice(uid);
-			}
-		});
-
-		// Listen for device UID changes (if it’s set later)
-		this.deviceInfoService.deviceUID$.subscribe(uid => {
-			if (uid && (!this.device.androidid || this.device.androidid !== uid)) {
-				this.device.androidid = uid;
-				this.loadScrollers();
-			}
-		});
-	}
-
-
-	private loadScrollers() {
-		if (!this.device) return;
-
-		// Ensure the vertical flag is set
-		if (this.device.orientation) {
-			this.device.isVertical = this.device.orientation.includes('9:16');
-		} else if (this.device.isVertical === undefined) {
-			// fallback default (you can adjust this)
-			this.device.isVertical = false;
-		}
-
-		this.authService.getMediafiles(this.device).subscribe({
-			next: (res: any) => {
-				const scrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
-				this.scrollers = scrollers;
-				this.topScrollers = scrollers.filter((s: any) => s.type === 'TOP');
-				this.bottomScrollers = scrollers.filter((s: any) => s.type === 'BOTTOM');
-			},
-			error: (err) => {
-				console.error(' Scroller fetch failed:', err);
-			}
-		});
-	}
-
-	private startScrollerUpdates() {
-		this.scrollerInterval = setInterval(() => {
-			if (!this.device) return;
-			this.authService.getMediafiles(this.device).subscribe({
-				next: (res: any) => {
-					const newScrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
-
-					// Only proceed if something changed
-					if (JSON.stringify(this.scrollers) !== JSON.stringify(newScrollers)) {
-						// console.log(' Scrollers updated');
-						this.scrollers = [...newScrollers];
-
-						const updatedTop = newScrollers.filter((s: any) => s.type === 'TOP');
-						const updatedBottom = newScrollers.filter((s: any) => s.type === 'BOTTOM');
-
-						const topChanged = JSON.stringify(this.topScrollers) !== JSON.stringify(updatedTop);
-						const bottomChanged = JSON.stringify(this.bottomScrollers) !== JSON.stringify(updatedBottom);
-
-						if (topChanged || bottomChanged) {
-							this.topScrollers = [...updatedTop];
-							this.bottomScrollers = [...updatedBottom];
-							// console.log('Scroller position/content updated instantly!');
-						}
-					}
-				},
-				error: (err) => {
-					console.error(' Scroller update failed:', err);
-				}
-			});
-		}, 1000); //  set to 1 sec — 1000ms is too frequent and may cause flicker
-	}
-
-	private isExistedDevice(deviceUID: string) {
-		this.authService.isExistedDevice(deviceUID).subscribe((res: any) => {
-			const { client_status, device_status, isexpired, orientation } = res;
-			if (res?.status !== 'success' || !client_status || !device_status || isexpired) {
-				console.warn(' Device not active or expired, skipping scroller load');
-				return;
-			}
-
-			//  Device is valid, update info
-			const uid = this.device.androidid;
-			this.device = res;
-			this.device.androidid = uid;
-			this.device.isVertical = this.device?.orientation?.includes('9:16');
-			sessionStorage.setItem('device', JSON.stringify(this.device));
-
-			// Now safe to load scrollers
-			this.loadScrollers();
-			this.startScrollerUpdates();
-		});
-	}
 
 	ngAfterViewInit(): void {
 		if (this.isLoginPage) {
@@ -144,7 +39,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	@HostListener('window:keydown', ['$event'])
-	handleKeyboardEvent(event: KeyboardEvent) {
+	handleKeyboardEvent(event: KeyboardEvent) {	
 		switch (event.keyCode) {
 			case 13:
 				const now = Date.now();
@@ -160,7 +55,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 			case 27:    // ESC / Browser
 				event.preventDefault();
 				event.stopPropagation();
-				// console.log("Back Button Works!!" + event.key + "  "+event.keyCode)
+				console.log("Back Button Works!!")
 
 				if (this.dialog.openDialogs.length > 0) {
 					this.dialog.closeAll();
@@ -194,20 +89,28 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 				});
 
 				this.exitDialogRef.afterClosed().subscribe((result: any) => {
+					this.exitDialogRef = null; //  clear reference
+
 					if (result) {
 						try {
-							(window as any).webOS.platformBack();
+							if ((window as any).tizen) {
+								(window as any).tizen.application.getCurrentApplication().exit();
+							} else if ((window as any).webOS) {
+								(window as any).webOS.platformBack();
+							} else {
+								window.close();
+							}
 						} catch (e) {
 							window.close();
 						}
 					}
 				});
-
 			}
 		} catch (err) {
 			console.error("❌ exitApp error:", err);
 		}
 	}
+
 
 	private registerExitPopupFocus() {
 		const dialogContainer = document.querySelector('.mat-dialog-container');
@@ -246,6 +149,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 			document.removeEventListener('keydown', keyListener, true);
 		});
 	}
+
 
 	@HostListener('document:keydown', ['$event'])
 	onKeydown(event: KeyboardEvent) {
@@ -290,4 +194,3 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 		if (this.intervalId) clearInterval(this.intervalId);
 	}
 }
-

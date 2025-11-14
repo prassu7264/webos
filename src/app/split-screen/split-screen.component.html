@@ -2,9 +2,11 @@
 
 <div class="screen-container">
     <gridster [options]="options" class="drag-content drag-handler">
-        <gridster-item *ngFor="let item of zoneinfo" [item]="item" class="grid-item">
+        <gridster-item *ngFor="let item of zoneinfo; trackBy: trackById" [item]="item" class="grid-item">
             <div class="widget-content">
-                <app-content-player [filesData]="item?.media_list"></app-content-player>
+                <app-content-player [filesData]="item?.media_list" [splitScreen]="splitScreen" [zoneId]="item.id"
+                    (zoneComplete)="onZoneComplete($event)"
+                    [attr.key]="item.id + '-' + item.media_list?.length"></app-content-player>
             </div>
         </gridster-item>
     </gridster>
@@ -17,4 +19,13 @@
                 alt="⦿">
         </ng-container>
     </div>
+
+    <!-- Top Scroller -->
+    <app-scroller *ngIf="topScrollers.length" [scrollers]="topScrollers" class="ticker-bar top-ticker">
+    </app-scroller>
+
+    <!-- Bottom Scroller -->
+    <app-scroller *ngIf="bottomScrollers.length" [scrollers]="bottomScrollers" class="ticker-bar bottom-ticker">
+    </app-scroller>
+
 </div>

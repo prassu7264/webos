@@ -32,3 +32,19 @@
   justify-content: center;
   align-items: center;
 }
+
+.ticker-bar {
+  position: absolute;   /* overlay on top of grid */
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+  pointer-events: none; /* don’t block video or media clicks */
+}
+
+.top-ticker {
+  top: 0;
+}
+
+.bottom-ticker {
+  bottom: 0;
+}

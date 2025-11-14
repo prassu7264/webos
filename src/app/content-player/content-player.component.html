@@ -1,26 +1,25 @@
 <!-- content-player.component.html -->
- 
-<div class="fade-wrapper" [class.fade-active]="isFading">
-    <div [ngSwitch]="filesData[currentIndex]?.type" class="media-container">
-        <img *ngSwitchCase="'image'" style="height: 100%; width: 100%; object-fit: fill !important;"
-            [src]="filesData[currentIndex]?.downloadedUrl || filesData[currentIndex].Url" alt="image"
-            class="media-image" />
+<div [ngSwitch]="filesData[currentIndex]?.type" class="media-container">
+    <img *ngSwitchCase="'image'" style="height: 100%; width: 100%; object-fit: fill !important;"
+        [src]="filesData[currentIndex].Url" alt="image" class="media-image" />
 
-        <video *ngSwitchCase="'video'" preload="none"
-            style="min-height: 100%; min-width: 100%; object-fit: fill !important;" id="media-video"
-            [src]="filesData[currentIndex].Url" class="media-video" autoplay muted playsinline></video>
+    <video *ngSwitchCase="'video'" preload="none"
+        style="min-height: 100%; min-width: 100%; object-fit: fill !important;" id="media-video"
+        [src]="filesData[currentIndex].Url" class="media-video"
+        [loop]="filesData.length === 1 && splitScreen.length === 1" [attr.data-zone]="zoneId" autoplay muted
+        playsinline></video>
 
-        <ng-container *ngSwitchCase="'youtube'">
-            <app-ytplayer *ngIf="playerRecreateKey" [url]="filesData[currentIndex].Url" [index]="currentIndex"
-                [loop]="filesData.length === 1" (videoEnded)="onVideoEnded($event)">
-            </app-ytplayer>
-        </ng-container>
+    <ng-container *ngSwitchCase="'youtube'">
+        <app-ytplayer *ngIf="playerRecreateKey" [url]="filesData[currentIndex].Url" [index]="currentIndex"
+            [loop]="filesData.length === 1" (videoEnded)="onVideoEnded($event)">
+        </app-ytplayer>
+    </ng-container>
 
-        <app-pdf-viewer *ngSwitchCase="'pdf'" [loop]="filesData.length === 1" (pdfEnded)="onVideoEnded($event)"
-            [url]="filesData[currentIndex].Url">
-        </app-pdf-viewer>
-    </div>
+    <app-pdf-viewer *ngSwitchCase="'pdf'" [loop]="filesData.length === 1" (pdfEnded)="onVideoEnded($event)"
+        [url]="filesData[currentIndex].Url">
+    </app-pdf-viewer>
 </div>
+
 
 <!-- Lightweight Transition Overlay -->
 <div class="transition-overlay" *ngIf="isSwitching"></div>
