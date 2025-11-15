@@ -1,9 +1,10 @@
-
-//bcsdfs/* content-player.component.ts */
+/* content-player.component.ts */
 import { Component, Input, ViewChild, ElementRef, OnChanges, SimpleChanges, OnDestroy, AfterViewInit, Output, EventEmitter } from '@angular/core';
 import { ToastService } from '../_core/services/toast.service';
 import { YtplayerComponent } from '../_core/cell-renders/ytplayer/ytplayer.component';
 import { DownloadedMedia, WebosDownloadService } from '../_core/services/webos-download.service';
+import { ConnectionService, ConnectionState } from 'ng-connection-service';
+import { Subscription, tap } from 'rxjs';
 
 @Component({
 	selector: 'app-content-player',
@@ -15,6 +16,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	@ViewChild(YtplayerComponent) youtubePlayerComponent!: YtplayerComponent;
 	@ViewChild('videoEl', { static: false }) videoElRef?: ElementRef<HTMLVideoElement>;
 	@Input() splitScreen: any[] = [];
+	@Input() splitScreenList: any[] = [];
 	@Input() zoneId!: number;
 	@Output() zoneComplete = new EventEmitter<number>();
 	currentIndex = 0;
@@ -26,36 +28,25 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	showUnsupportedOverlay = false;
 	isFading = false;
 	isSwitching = false;
+	videoElementKey = 0;
+	private activePlayingId?: number;
+	isOnline = true;
+	private intervalSub?: Subscription;
+	private loopToken = 0;
 
-	constructor(private toastService: ToastService, private downloadService: WebosDownloadService) { }
+
+
+	constructor(private toastService: ToastService, private downloadService: WebosDownloadService, private connectionService: ConnectionService) { }
 
 	ngOnChanges(changes: SimpleChanges): void {
 		if (changes['filesData'] && changes['filesData'].currentValue) {
-
-			const newFiles = changes['filesData'].currentValue;
-			const previousFiles = changes['filesData'].previousValue;
-
-			// 1. Prevent running when empty
-			if (!newFiles || newFiles.length === 0) {
-				 console.log(newFiles)
-				 console.log(previousFiles)
-				return; 
-			}
-
-			// 2. Prevent re-loading if same data comes again
-			if (previousFiles && JSON.stringify(newFiles) === JSON.stringify(previousFiles)) {
-				return; // Same data received → do nothing
-			}
-
-			// 3. Otherwise proceed normally
-			this.triggerSmoothSwitch(() => this.loadMediaFiles());
+			// console.log("filesData :", this.filesData);
+			this.loadMediaFiles();
+			// this.triggerSmoothSwitch(() => this.loadMediaFiles());
 		}
 	}
 
-
-	ngAfterViewInit(): void {
-		// reserved for future
-	}
+	ngAfterViewInit(): void { }
 
 	private triggerSmoothSwitch(callback: () => void) {
 		if (this.isSwitching) return;
@@ -92,6 +83,13 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		return (files || []).map(file => {
 			const remoteUrl = (file?.Url || '').toString();
 			const norm = (remoteUrl || '').split('?')[0];
+
+			// --- Skip YouTube items ALWAYS ---
+			// if (remoteUrl.includes('youtube.com') || remoteUrl.includes('youtu.be')) {
+			// 	console.warn(" Skipping YouTube content:", remoteUrl);
+			// 	return null;
+			// }
+
 			const downloaded = downloadedMap[norm] ?? downloadedMap[remoteUrl];
 			if (isOffline && !downloaded) return null;
 
@@ -108,110 +106,111 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
 		const currentFile = this.filesData[this.currentIndex];
+		console.log("showCurrentSlide>CurrentFile: ", currentFile)
+		console.log("showCurrentSlide>Filedata: ", this.filesData)
 		if (!currentFile) return;
-
-		if (!Number(currentFile.Mediafile_id)) currentFile.Mediafile_id = Date.now();
-
 		if (currentFile.type === 'video') {
-			setTimeout(() => {
-				const videoEl = document.getElementById('media-video') as HTMLVideoElement;
-				if (!videoEl) {
-					console.warn('Video element not found');
-					return;
+			const videoEl = document.getElementById('media-video') as HTMLVideoElement;
+
+			if (!videoEl) {
+				console.warn('Video element not found');
+				return;
+			}
+			videoEl.removeAttribute('src');
+			// this.videoElementKey++;  // forces video element recreation
+			videoEl.src = currentFile.Url;
+			videoEl.currentTime = 0;
+			videoEl.load();
+
+			videoEl.onended = () => {
+				// console.log("Current Index!" + this.currentIndex)
+				this.nextSlideAndShow();
+				videoEl.onended = null;
+			};
+
+			let attempts = 0;
+			const maxAttempts = 3;
+
+			const tryPlay = async () => {
+				attempts++;
+				try {
+					await videoEl.play();
+					// console.log('Video started (attempt ' + attempts + ') for zone', this.zoneId);
+				} catch (err) {
+					console.warn(`Autoplay attempt ${attempts} failed`, err);
+					if (!videoEl.muted) {
+						videoEl.muted = true;
+						tryPlay();
+					} else if (attempts < maxAttempts) {
+						setTimeout(tryPlay, 500);
+					} else {
+						console.error('Video cannot play after multiple attempts', err);
+					}
 				}
-				videoEl.pause();
-				videoEl.removeAttribute('src');
-				videoEl.src = currentFile.Url;
-				videoEl.currentTime = 0;
-				videoEl.load();
+			};
 
-				videoEl.onended = () => {
-					this.nextSlideAndShow();
-					videoEl.onended = null;
-				};
+			videoEl.addEventListener('canplaythrough', tryPlay, { once: true });
 
-				let attempts = 0;
-				const maxAttempts = 3;
+			videoEl.onerror = null;
+			videoEl.onerror = () => {
+				const mediaError = videoEl.error;
+				let errorMsg = 'Unknown video error';
 
-				const tryPlay = async () => {
-					attempts++;
-					try {
-						await videoEl.play();
-						console.log('Video started (attempt ' + attempts + ')');
-					} catch (err) {
-						console.warn(`Autoplay attempt ${attempts} failed`, err);
-						if (!videoEl.muted) {
-							videoEl.muted = true;
-							tryPlay();
-						} else if (attempts < maxAttempts) {
-							setTimeout(tryPlay, 500);
-						} else {
-							console.error('Video cannot play after multiple attempts', err);
-						}
+				if (mediaError) {
+					switch (mediaError.code) {
+						case mediaError.MEDIA_ERR_ABORTED:
+							errorMsg = 'Video playback aborted.';
+							break;
+						case mediaError.MEDIA_ERR_NETWORK:
+							errorMsg = 'Network error while loading video.';
+							break;
+						case mediaError.MEDIA_ERR_DECODE:
+							errorMsg = 'Video decoding error.';
+							break;
+						case mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+							errorMsg = 'Video format not supported or file missing.';
+							this.unsupportedCount++;
+
+							const total = this.totalMediaCount || this.filesData.length || 0;
+
+							// CASE 1: only one media and it's unsupported → show full UI
+							if (total === 1) {
+								this.showUnsupportedOverlay = true;
+							}
+							// CASE 2: multiple media → show only toast, not overlay
+							else if (this.unsupportedCount < total) {
+								this.toastService.error('Unsupported file format');
+							}
+							// CASE 3: all media unsupported → show full UI
+							else if (this.unsupportedCount === total) {
+								this.showUnsupportedOverlay = true;
+							}
+
+							this.nextSlideAndShow();
+							break;
+
 					}
-				};
+				}
 
-				videoEl.addEventListener('canplaythrough', tryPlay, { once: true });
+				console.error('Video failed to load', {
+					src: videoEl.currentSrc || currentFile.Url,
+					error: errorMsg,
+				});
 
-				videoEl.onerror = null;
-				videoEl.onerror = () => {
-					const mediaError = videoEl.error;
-					let errorMsg = 'Unknown video error';
+				// keep your existing toast for all other errors
+				if (mediaError && mediaError.code !== mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+					this.toastService.error(errorMsg);
+				}
 
-					if (mediaError) {
-						switch (mediaError.code) {
-							case mediaError.MEDIA_ERR_ABORTED:
-								errorMsg = 'Video playback aborted.';
-								break;
-							case mediaError.MEDIA_ERR_NETWORK:
-								errorMsg = 'Network error while loading video.';
-								break;
-							case mediaError.MEDIA_ERR_DECODE:
-								errorMsg = 'Video decoding error.';
-								break;
-							case mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-								errorMsg = 'Video format not supported or file missing.';
-								this.unsupportedCount++;
+			};
 
-								const total = this.totalMediaCount || this.filesData.length || 0;
-
-								// CASE 1: only one media and it's unsupported → show full UI
-								if (total === 1) {
-									this.showUnsupportedOverlay = true;
-								}
-								// CASE 2: multiple media → show only toast, not overlay
-								else if (this.unsupportedCount < total) {
-									this.toastService.error('Unsupported file format');
-								}
-								// CASE 3: all media unsupported → show full UI
-								else if (this.unsupportedCount === total) {
-									this.showUnsupportedOverlay = true;
-								}
-
-								this.nextSlideAndShow();
-								break;
-
-						}
-					}
-
-					console.error('Video failed to load', {
-						src: videoEl.currentSrc || currentFile.Url,
-						error: errorMsg,
-					});
-
-					// keep your existing toast for all other errors
-					if (mediaError && mediaError.code !== mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-						this.toastService.error(errorMsg);
-					}
-
-				};
-			});
 		} else if (currentFile.type === 'image') {
 			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
 		} else if (currentFile.type === 'youtube') {
 			this.nextSlideAndShow();
 			this.resetPlayerForYouTubeForCurrentIndex();
 		} else if (currentFile.type === 'pdf') {
+
 		} else {
 			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
 		}
@@ -219,37 +218,31 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 
 	private nextSlideAndShow() {
 		clearTimeout(this.autoplayTimer);
-		if (!this.filesData || this.filesData.length === 0) return;
-
+		if (this.filesData.length === 0) {
+			return;
+		}
 		const isLastMedia = this.currentIndex === this.filesData.length - 1;
 
 		if (isLastMedia) {
 			this.zoneComplete.emit(this.zoneId);
+			clearTimeout(this.autoplayTimer);
 		}
 
 		if (this.filesData.length > 1) {
 			this.currentIndex = (this.currentIndex + 1) % this.filesData.length;
 			this.resetPlayerForYouTubeForCurrentIndex();
 			// console.log("Next Slide Index:", this.currentIndex);
-			console.log(this.currentIndex);
+			// console.log(this.currentIndex);
 
 			setTimeout(() => this.showCurrentSlide(), 80);
 		}
-	}
-
-
-	nextSlide() {
-		clearTimeout(this.autoplayTimer);
-		if (!this.filesData || !this.filesData.length) return;
-		this.currentIndex = (this.currentIndex + 1) % this.filesData.length;
-		this.resetPlayerForYouTubeForCurrentIndex();
-		setTimeout(() => this.showCurrentSlide(), 80);
 	}
 
 	onVideoEnded(event: { success?: boolean; message?: string } = { success: true }) {
 		if (event && event.success === false && event.message) {
 			this.toastService.error(event.message);
 		}
+		// console.log(event);
 		this.nextSlideAndShow();
 	}
 
@@ -280,7 +273,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	}
 
 	ngOnDestroy(): void {
+		this.intervalSub?.unsubscribe();
 		clearTimeout(this.autoplayTimer);
-		this.destroyed = true;
 	}
 }

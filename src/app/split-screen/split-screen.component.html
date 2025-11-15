@@ -4,9 +4,8 @@
     <gridster [options]="options" class="drag-content drag-handler">
         <gridster-item *ngFor="let item of zoneinfo; trackBy: trackById" [item]="item" class="grid-item">
             <div class="widget-content">
-                <app-content-player [filesData]="item?.media_list" [splitScreen]="splitScreen" [zoneId]="item.id"
-                    (zoneComplete)="onZoneComplete($event)"
-                    [attr.key]="item.id + '-' + item.media_list?.length"></app-content-player>
+                <app-content-player [filesData]="item?.media_list" [splitScreenList]="splitScreenList"  [attr.key]="item.id + '-' + item.media_list?.length"
+                    [zoneId]="item.id" (zoneComplete)="onZoneComplete($event)"  ></app-content-player>
             </div>
         </gridster-item>
     </gridster>

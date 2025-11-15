@@ -20,6 +20,9 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	subscription = new Subscription();
 	options: GridsterConfig;
 	splitScreen: any[] = [];
+	splitScreenList: any[] = [];
+	updatedTime: any = '';
+	splitCurrentIndex = 0;
 	zoneinfo: GridsterItem[] | any[] = [];
 	device: any;
 	intervalSub?: Subscription;
@@ -31,6 +34,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	bottomScrollers: any[] = [];
 	zoneCompletionMap: { [zoneId: number]: boolean } = {};
 	refreshKey: number = 0;
+	private intervalId: any;
 
 	constructor(
 		private authService: AuthService,
@@ -90,11 +94,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		);
 	}
 
-	ngOnDestroy(): void {
-		this.intervalSub?.unsubscribe();
-		clearTimeout(this.autoplayTimer);
-		this.subscription.unsubscribe();
-	}
+
 
 	private signin() {
 		const payload = { username: this.device.username, password: this.device.password };
@@ -130,30 +130,16 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 	private loadMediaFiles() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
-			this.splitScreen = res?.layout_list ?? [];
-			this.scrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
-
-			// collect all media and push to background downloader (service dedupes)
-			const allMedia: any[] = [];
-			(this.splitScreen || []).forEach((l: any) => {
-				(l.zonelist || []).forEach((z: any) => {
-					(z.media_list || []).forEach((m: any) => allMedia.push(m));
-				});
-			});
-
-			// single call - service will ignore already downloaded or in-progress items
-			// console.log("From Split screen inside of loadMediaFiles()")
-			this.wds.backgroundDownloadList(allMedia);
-
+			const newLayout = this.deepCopy(res?.layout_list ?? []);
+			this.updatedTime = res.updated_time;
+			this.splitScreen = this.deepCopy(newLayout);
+			this.splitScreenList = this.deepCopy(newLayout);
+			this.scrollers = res?.scrollerList || [];
 			this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
 			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
-			this.currentIndex = 0;
+			this.splitCurrentIndex = 0;
 			this.showCurrentSlide();
 		});
-	}
-	trackById(index: number, item: any): any {
-		console.log(item.id + "  " + item.media_list.length)
-		return item.id ?? index;
 	}
 
 	private checkForUpdates() {
@@ -166,21 +152,15 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
 				this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			}
-			if (JSON.stringify(this.splitScreen) !== JSON.stringify(newLayout)) {
-				this.splitScreen = newLayout;
+			const oldSet = this.toMediaSet(this.splitScreen);
+			const newSet = this.toMediaSet(newLayout);
 
-				const allMedia: any[] = [];
-				(this.splitScreen || []).forEach((l: any) => {
-					(l.zonelist || []).forEach((z: any) => {
-						(z.media_list || []).forEach((m: any) => allMedia.push(m));
-					});
-				});
-
-				// avoid duplicate downloads — service will dedupe
-				// console.log("From Split screen inside of checkForUpdates()")
-				this.wds.backgroundDownloadList(allMedia);
-
-				this.currentIndex = 0;
+			if (oldSet.size !== newSet.size || [...oldSet].some(x => !newSet.has(x)) || this.updatedTime !== res.updated_time) {
+				this.splitScreen = this.deepCopy(newLayout);
+				this.splitScreenList = this.deepCopy(newLayout);
+				this.updatedTime = res.updated_time;
+				this.splitCurrentIndex = 0;
+				localStorage.removeItem('splitScreenList');
 				this.showCurrentSlide();
 			}
 		});
@@ -189,20 +169,39 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
 		this.zoneinfo = [];
-		if (!this.splitScreen?.length) return;
-		this.zoneinfo = this.splitScreen[this.currentIndex]?.zonelist || [];
-		console.log(this.zoneinfo);
-		// const layout_time = this.splitScreen[this.currentIndex]?.layout_duration ?? 10;
-		// Autoplay next slide (uncomment if needed)
-		// this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), layout_time * 1000);
+
+		// const stored = localStorage.getItem('splitScreenList');
+		// this.splitScreenList = stored ? JSON.parse(stored) : this.splitScreenList;
+
+		if (!this.splitScreenList?.length) return;
+		this.zoneinfo = this.splitScreenList[this.splitCurrentIndex]?.zonelist || [];
+		const layout_time = this.splitScreenList[this.splitCurrentIndex]?.layout_duration ?? 10;
 	}
 
 	private nextSlideAndShow() {
 		clearTimeout(this.autoplayTimer);
-		if (!this.splitScreen?.length) return;
-		this.currentIndex = (this.currentIndex + 1) % this.splitScreen.length;
+		if (!this.splitScreenList?.length) return;
+		this.splitCurrentIndex = (this.splitCurrentIndex + 1) % this.splitScreenList.length;
 		this.showCurrentSlide();
 	}
+	private toMediaSet(data: any) {
+		return new Set(
+			data.flatMap((layout: any) =>
+				layout.zonelist.flatMap((zone: any) =>
+					zone.media_list.map((m: any) => `${m.Mediafile_id}|${m.Url}`)
+				)
+			)
+		);
+	}
+	private deepCopy(obj: any) {
+		return JSON.parse(JSON.stringify(obj));
+	}
+
+	trackById(index: number, item: any): any {
+		// safe trackBy — include index so identical ids in single-layer won't confuse Angular
+		return item.id ?? index;
+	}
+
 	onZoneComplete(zoneId: any) {
 		this.zoneCompletionMap[zoneId] = true;
 		const allCompleted = this.zoneinfo.every(zone => this.zoneCompletionMap[zone.id]);
@@ -213,10 +212,16 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		}
 	}
 
-
 	getNetworkInfo() {
 		this.authService.getNetworkInfo(this.device).subscribe((res: any) => {
 			console.log(res);
 		});
+	}
+
+	ngOnDestroy(): void {
+		this.intervalSub?.unsubscribe();
+		clearTimeout(this.autoplayTimer);
+		this.subscription.unsubscribe();
+		if (this.intervalId) clearInterval(this.intervalId);
 	}
 }
