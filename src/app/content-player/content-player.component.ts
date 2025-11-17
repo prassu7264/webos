@@ -41,8 +41,10 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	ngOnChanges(changes: SimpleChanges): void {
 		if (changes['filesData'] && changes['filesData'].currentValue) {
 			// console.log("filesData :", this.filesData);
-			this.loadMediaFiles();
-			// this.triggerSmoothSwitch(() => this.loadMediaFiles());
+			// Stop any previous playback and ensure clean state
+			this.stopPlayback();
+			// this.loadMediaFiles();
+			this.triggerSmoothSwitch(() => this.loadMediaFiles());
 		}
 	}
 
@@ -62,7 +64,34 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		}, 500);
 	}
 
+	/** Ensure everything is cleaned up (timers, listeners, src) */
+	private stopPlayback() {
+		this.loopToken++; // invalidate previous async callbacks
+		this.destroyed = true;
+		clearTimeout(this.autoplayTimer);
+		this.autoplayTimer = undefined;
+
+		try {
+			const videoEl = this.videoElRef?.nativeElement || document.getElementById('media-video') as HTMLVideoElement | null;
+			if (videoEl) {
+				videoEl.pause();
+				try { videoEl.onended = null; } catch (e) { /* ignore */ }
+				try { videoEl.onerror = null; } catch (e) { /* ignore */ }
+				try { videoEl.removeAttribute('src'); } catch (e) { /* ignore */ }
+				try { videoEl.src = ''; videoEl.load(); } catch (e) { /* ignore */ }
+			}
+		} catch (e) {
+			/* best-effort cleanup, don't throw */
+		}
+		// reset flags so next load starts fresh
+		this.destroyed = false;
+		this.playerRecreateKey = null;
+		this.unsupportedCount = 0;
+	}
+
 	private loadMediaFiles() {
+		// create a new token for this "loop" so old callbacks are ignored
+		this.loopToken++;
 		this.filesData = this.prepareFiles(this.filesData);
 		this.currentIndex = 0;
 		this.totalMediaCount = this.filesData.length;
@@ -85,14 +114,13 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 			const norm = (remoteUrl || '').split('?')[0];
 
 			// --- Skip YouTube items ALWAYS ---
-			// if (remoteUrl.includes('youtube.com') || remoteUrl.includes('youtu.be')) {
-			// 	console.warn(" Skipping YouTube content:", remoteUrl);
-			// 	return null;
-			// }
+			if (remoteUrl.includes('youtube.com') || remoteUrl.includes('youtu.be')) {
+				console.warn(" Skipping YouTube content:", remoteUrl);
+				return null;
+			}
 
 			const downloaded = downloadedMap[norm] ?? downloadedMap[remoteUrl];
 			if (isOffline && !downloaded) return null;
-
 			const playUrl = downloaded ? downloaded.url : remoteUrl;
 			const lurl = (remoteUrl || '').toLowerCase();
 			let type: any = 'other';
@@ -104,28 +132,40 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	}
 
 	private showCurrentSlide() {
+		const token = this.loopToken;
 		clearTimeout(this.autoplayTimer);
 		const currentFile = this.filesData[this.currentIndex];
 		console.log("showCurrentSlide>CurrentFile: ", currentFile)
 		console.log("showCurrentSlide>Filedata: ", this.filesData)
 		if (!currentFile) return;
+		if (token !== this.loopToken) return; // abort if old
 		if (currentFile.type === 'video') {
-			const videoEl = document.getElementById('media-video') as HTMLVideoElement;
+			// prefer ViewChild reference if available
+			const videoEl = this.videoElRef?.nativeElement as HTMLVideoElement | undefined
+				|| document.getElementById('media-video') as HTMLVideoElement | null;
 
 			if (!videoEl) {
 				console.warn('Video element not found');
+				// small retry (but guard with token)
+				setTimeout(() => { if (token === this.loopToken) this.showCurrentSlide(); }, 150);
 				return;
 			}
+
+			// ensure previous listeners won't interfere
+			try { videoEl.onended = null; } catch (e) { /* ignore */ }
+			try { videoEl.onerror = null; } catch (e) { /* ignore */ }
+
 			videoEl.removeAttribute('src');
 			// this.videoElementKey++;  // forces video element recreation
 			videoEl.src = currentFile.Url;
 			videoEl.currentTime = 0;
-			videoEl.load();
+			try { videoEl.load(); } catch (e) { /* ignore */ }
 
 			videoEl.onended = () => {
 				// console.log("Current Index!" + this.currentIndex)
+				if (token !== this.loopToken) return;
 				this.nextSlideAndShow();
-				videoEl.onended = null;
+				try { videoEl.onended = null; } catch (e) { }
 			};
 
 			let attempts = 0;
@@ -149,10 +189,13 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 				}
 			};
 
-			videoEl.addEventListener('canplaythrough', tryPlay, { once: true });
+			videoEl.addEventListener('canplaythrough', () => {
+				if (token !== this.loopToken) return;
+				tryPlay();
+			}, { once: true });
 
-			videoEl.onerror = null;
 			videoEl.onerror = () => {
+				if (token !== this.loopToken) return;
 				const mediaError = videoEl.error;
 				let errorMsg = 'Unknown video error';
 
@@ -205,27 +248,31 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 			};
 
 		} else if (currentFile.type === 'image') {
-			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
+			this.autoplayTimer = setTimeout(() => {
+				if (token !== this.loopToken) return;
+				this.nextSlideAndShow();
+			}, 10000);
 		} else if (currentFile.type === 'youtube') {
 			this.nextSlideAndShow();
 			this.resetPlayerForYouTubeForCurrentIndex();
 		} else if (currentFile.type === 'pdf') {
 
 		} else {
-			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
+			this.autoplayTimer = setTimeout(() => {
+				if (token !== this.loopToken) return;
+				this.nextSlideAndShow();
+			}, 10000);
 		}
 	}
 
 	private nextSlideAndShow() {
+		const token = this.loopToken;
 		clearTimeout(this.autoplayTimer);
-		if (this.filesData.length === 0) {
-			return;
-		}
+		if (!this.filesData || this.filesData.length === 0) return;
 		const isLastMedia = this.currentIndex === this.filesData.length - 1;
 
 		if (isLastMedia) {
 			this.zoneComplete.emit(this.zoneId);
-			clearTimeout(this.autoplayTimer);
 		}
 
 		if (this.filesData.length > 1) {
@@ -233,8 +280,10 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 			this.resetPlayerForYouTubeForCurrentIndex();
 			// console.log("Next Slide Index:", this.currentIndex);
 			// console.log(this.currentIndex);
-
-			setTimeout(() => this.showCurrentSlide(), 80);
+			setTimeout(() => {
+				if (token !== this.loopToken) return;
+				this.showCurrentSlide();
+			}, 80);
 		}
 	}
 
@@ -273,6 +322,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	}
 
 	ngOnDestroy(): void {
+		this.stopPlayback();
 		this.intervalSub?.unsubscribe();
 		clearTimeout(this.autoplayTimer);
 	}

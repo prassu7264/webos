@@ -35,6 +35,8 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	zoneCompletionMap: { [zoneId: number]: boolean } = {};
 	refreshKey: number = 0;
 	private intervalId: any;
+	// NEW: map to control whether each zone's <app-content-player> is rendered.
+	showPlayerMap: { [zoneId: number]: boolean } = {};
 
 	constructor(
 		private authService: AuthService,
@@ -76,25 +78,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		});
 
 		history.pushState(null, '', window.location.href);
-
-		this.subscription.add(
-			this.connectionService.monitor().pipe(
-				tap((newState: ConnectionState) => {
-					this.currentState = newState;
-					if (this.currentState.hasNetworkConnection) {
-						if (this.status === 'OFFLINE') {
-							this.status = 'ONLINE';
-							this.loadMediaFiles(); // re-load fresh
-						}
-					} else {
-						this.status = 'OFFLINE';
-					}
-				})
-			).subscribe()
-		);
 	}
-
-
 
 	private signin() {
 		const payload = { username: this.device.username, password: this.device.password };
@@ -170,11 +154,21 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		clearTimeout(this.autoplayTimer);
 		this.zoneinfo = [];
 
-		// const stored = localStorage.getItem('splitScreenList');
-		// this.splitScreenList = stored ? JSON.parse(stored) : this.splitScreenList;
-
 		if (!this.splitScreenList?.length) return;
 		this.zoneinfo = this.splitScreenList[this.splitCurrentIndex]?.zonelist || [];
+		// FORCE re-creation of child <app-content-player> to guarantee old instance is destroyed
+		// quick false->true toggle for each zone id in current zoneinfo
+		for (const z of this.zoneinfo) {
+			const id = z.id;
+			// mark false first to ensure destruction, then set true next tick
+			this.showPlayerMap[id] = false;
+		}
+		// next tick (small delay) set them true to re-create component instances
+		setTimeout(() => {
+			for (const z of this.zoneinfo) {
+				this.showPlayerMap[z.id] = true;
+			}
+		}, 50);
 		const layout_time = this.splitScreenList[this.splitCurrentIndex]?.layout_duration ?? 10;
 	}
 
