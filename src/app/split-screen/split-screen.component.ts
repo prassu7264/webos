@@ -35,6 +35,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	zoneCompletionMap: { [zoneId: number]: boolean } = {};
 	refreshKey: number = 0;
 	private intervalId: any;
+	noMediaAvailable = false;
 	// NEW: map to control whether each zone's <app-content-player> is rendered.
 	showPlayerMap: { [zoneId: number]: boolean } = {};
 
@@ -70,7 +71,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			}
 		});
 
-		this.intervalSub = interval(5000).subscribe(() => {
+		this.intervalSub = interval(3000).subscribe(() => {
 			if (this.device.androidid) {
 				this.isExistedDevice(this.device.androidid);
 				this.checkForUpdates();
@@ -114,22 +115,70 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 	private loadMediaFiles() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
-			const newLayout = this.deepCopy(res?.layout_list ?? []);
+			const layoutList = res?.layout_list ?? [];
 			this.updatedTime = res.updated_time;
-			this.splitScreen = this.deepCopy(newLayout);
-			this.splitScreenList = this.deepCopy(newLayout);
+			this.splitScreen = this.deepCopy(layoutList);
+			this.splitScreenList = this.deepCopy(layoutList);
 			this.scrollers = res?.scrollerList || [];
 			this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
 			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			this.splitCurrentIndex = 0;
+			
+			// --- USE REUSABLE FUNCTION ---
+			if (this.checkNoMedia(layoutList)) {
+				this.noMediaAvailable = true;
+				return;
+			}
+			// --- MEDIA EXISTS ---
+			this.noMediaAvailable = false;
+			// SHOW FIRST LAYOUT
 			this.showCurrentSlide();
 		});
 	}
+
+	private checkNoMedia(layoutList: any[]): boolean {
+		// --- NO LAYOUTS ---
+		if (!layoutList || layoutList.length === 0) {
+			return true;
+		}
+
+		// --- COLLECT ZONES ---
+		let allZones: any[] = [];
+		layoutList.forEach((l: any) => {
+			if (Array.isArray(l.zonelist)) {
+				allZones = [...allZones, ...l.zonelist];
+			}
+		});
+
+		// --- FILTER ZONES THAT HAVE MEDIA ---
+		const validZones = allZones.filter(z =>
+			Array.isArray(z.media_list) && z.media_list.length > 0
+		);
+
+		// RESULT
+		return validZones.length === 0;
+	}
+
 
 	private checkForUpdates() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
 			const newLayout = res?.layout_list ?? [];
 			const newScrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
+
+			// --- IMPORTANT: CHECK NO MEDIA ON EVERY UPDATE ---
+			if (this.checkNoMedia(newLayout)) {
+				console.warn("NO MEDIA — stopping player loop completely.");
+				this.noMediaAvailable = true;
+				clearTimeout(this.autoplayTimer);
+				this.splitScreen = [];
+				this.splitScreenList = [];
+				this.zoneinfo = [];
+				this.zoneCompletionMap = {};
+				this.showPlayerMap = {};
+				return;
+			} else {
+				this.noMediaAvailable = false;
+			}
 
 			if (JSON.stringify(this.scrollers) !== JSON.stringify(newScrollers)) {
 				this.scrollers = newScrollers;
@@ -153,7 +202,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
 		this.zoneinfo = [];
-
 		if (!this.splitScreenList?.length) return;
 		this.zoneinfo = this.splitScreenList[this.splitCurrentIndex]?.zonelist || [];
 		// FORCE re-creation of child <app-content-player> to guarantee old instance is destroyed

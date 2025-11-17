@@ -1,6 +1,17 @@
 <!-- split-screen.component.html -->
 
 <div class="screen-container">
+    <!-- NO MEDIA AVAILABLE – ULTRA PREMIUM UI -->
+    <div *ngIf="noMediaAvailable" class="no-media-wrapper">
+        <div class="no-media-card">
+            <div class="icon">📁</div>
+            <div class="title">No Media Available…!</div>
+            <div class="subtitle">Please wait while your device receives media files.</div>
+            <div class="neon-loader">
+                <div class="bar"></div>
+            </div>
+        </div>
+    </div>
     <gridster [options]="options" class="drag-content drag-handler">
         <gridster-item *ngFor="let item of zoneinfo; trackBy: trackById" [item]="item" class="grid-item">
             <div class="widget-content">
