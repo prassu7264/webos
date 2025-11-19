@@ -43,6 +43,11 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 			// console.log("filesData :", this.filesData);
 			// Stop any previous playback and ensure clean state
 			this.stopPlayback();
+
+			// If new filesData contains more than one item, ensure overlay is hidden
+			if (Array.isArray(this.filesData) && this.filesData.length > 1) {
+				this.showUnsupportedOverlay = false;
+			}
 			// this.loadMediaFiles();
 			this.triggerSmoothSwitch(() => this.loadMediaFiles());
 		}
@@ -93,6 +98,18 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		// create a new token for this "loop" so old callbacks are ignored
 		this.loopToken++;
 		this.filesData = this.prepareFiles(this.filesData);
+
+		/** FIX 1 — If only 1 file and its type is neither video nor image nor pdf → unsupported */
+		if (this.filesData.length === 1) {
+			const f = this.filesData[0];
+			if (f.type !== 'video' && f.type !== 'image' && f.type !== 'pdf') {
+				this.showUnsupportedOverlay = true;
+				// keep unsupportedCount/total consistent
+				this.totalMediaCount = 1;
+				this.unsupportedCount = 1;
+				return;   // stop further playing
+			}
+		}
 		this.currentIndex = 0;
 		this.totalMediaCount = this.filesData.length;
 		this.unsupportedCount = 0;
@@ -139,6 +156,11 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		console.log("showCurrentSlide>Filedata: ", this.filesData)
 		if (!currentFile) return;
 		if (token !== this.loopToken) return; // abort if old
+		// If overlay is active and there's only one file (unsupported), ensure we don't try to load/play it.
+		if (this.showUnsupportedOverlay && this.filesData.length === 1) {
+			// keep overlay visible, don't attempt plays — nothing more to do
+			return;
+		}
 		if (currentFile.type === 'video') {
 			// prefer ViewChild reference if available
 			const videoEl = this.videoElRef?.nativeElement as HTMLVideoElement | undefined
@@ -219,6 +241,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 							// CASE 1: only one media and it's unsupported → show full UI
 							if (total === 1) {
 								this.showUnsupportedOverlay = true;
+								return;
 							}
 							// CASE 2: multiple media → show only toast, not overlay
 							else if (this.unsupportedCount < total) {
@@ -258,16 +281,24 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		} else if (currentFile.type === 'pdf') {
 
 		} else {
-			this.autoplayTimer = setTimeout(() => {
-				if (token !== this.loopToken) return;
-				this.nextSlideAndShow();
-			}, 10000);
+			// unknown file type — treat as "other" (show toast + skip) unless single -> overlay already handled in loadMediaFiles
+			if (this.filesData.length === 1) {
+				// single and unknown → show overlay (should have been handled earlier)
+				this.showUnsupportedOverlay = true;
+				return;
+			}
+			this.toastService.error('Unsupported file format');
+			this.nextSlideAndShow();
 		}
 	}
 
 	private nextSlideAndShow() {
 		const token = this.loopToken;
 		clearTimeout(this.autoplayTimer);
+		/** FIX 2 — If only 1 media and it's unsupported, do NOT loop/flicker */
+		if (this.filesData.length === 1 && this.showUnsupportedOverlay) {
+			return;
+		}
 		if (!this.filesData || this.filesData.length === 0) return;
 		const isLastMedia = this.currentIndex === this.filesData.length - 1;
 

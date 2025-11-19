@@ -1,5 +1,4 @@
 <!-- split-screen.component.html -->
-
 <div class="screen-container">
     <!-- NO MEDIA AVAILABLE – ULTRA PREMIUM UI -->
     <div *ngIf="noMediaAvailable" class="no-media-wrapper">
@@ -23,7 +22,6 @@
             </div>
         </gridster-item>
     </gridster>
-
     <div class="px-4" style="position: absolute;bottom: 4em;z-index: 1;right: 1.5em;">
         <ng-container [ngSwitch]="status">
             <img [ngClass]="status" *ngSwitchCase="'ONLINE'" style="width: 70px;" src="assets/images/ONLINE.png"
@@ -32,13 +30,10 @@
                 alt="⦿">
         </ng-container>
     </div>
-
     <!-- Top Scroller -->
     <app-scroller *ngIf="topScrollers.length" [scrollers]="topScrollers" class="ticker-bar top-ticker">
     </app-scroller>
-
     <!-- Bottom Scroller -->
     <app-scroller *ngIf="bottomScrollers.length" [scrollers]="bottomScrollers" class="ticker-bar bottom-ticker">
     </app-scroller>
-
 </div>

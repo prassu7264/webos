@@ -36,6 +36,9 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	refreshKey: number = 0;
 	private intervalId: any;
 	noMediaAvailable = false;
+	private lastMediaType: string | null = null;
+	private pendingLayout: any[] | null = null;
+
 	// NEW: map to control whether each zone's <app-content-player> is rendered.
 	showPlayerMap: { [zoneId: number]: boolean } = {};
 
@@ -105,6 +108,10 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				this.device.androidid = uid;
 				this.device.isVertical = this.device?.orientation?.includes('9:16');
 				sessionStorage.setItem('device', JSON.stringify(res));
+
+
+				// Force immediate playlist refetch & apply (user requested immediate change on orientation)
+				this.loadMediaFiles();
 			}
 		});
 	}
@@ -123,7 +130,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
 			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			this.splitCurrentIndex = 0;
-			
+
 			// --- USE REUSABLE FUNCTION ---
 			if (this.checkNoMedia(layoutList)) {
 				this.noMediaAvailable = true;
@@ -159,15 +166,37 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		return validZones.length === 0;
 	}
 
+	private getPlaylistSignature(layout: any[]): string {
+		return layout
+			.map((l: any) =>
+				l.zonelist
+					.map((z: any) =>
+						z.media_list
+							.map((m: any) => `${m.Mediafile_id}-${m.Order_id}`)
+							.join('|')
+					)
+					.join('#')
+			)
+			.join('||');
+	}
+
+	private applyPendingPlaylistUpdate() {
+		if (!this.pendingLayout) return;
+		console.warn("APPLYING PENDING PLAYLIST UPDATE…");
+		this.splitScreen = this.deepCopy(this.pendingLayout);
+		this.splitScreenList = this.deepCopy(this.pendingLayout);
+		this.pendingLayout = null;
+	}
 
 	private checkForUpdates() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
+
 			const newLayout = res?.layout_list ?? [];
+			const newMediaType = res?.media_type ?? null;
 			const newScrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
 
-			// --- IMPORTANT: CHECK NO MEDIA ON EVERY UPDATE ---
+			// --- 0. Check NO MEDIA ---
 			if (this.checkNoMedia(newLayout)) {
-				console.warn("NO MEDIA — stopping player loop completely.");
 				this.noMediaAvailable = true;
 				clearTimeout(this.autoplayTimer);
 				this.splitScreen = [];
@@ -180,24 +209,58 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				this.noMediaAvailable = false;
 			}
 
+			// --- 1. Scrollers update ---
 			if (JSON.stringify(this.scrollers) !== JSON.stringify(newScrollers)) {
 				this.scrollers = newScrollers;
 				this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
 				this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			}
-			const oldSet = this.toMediaSet(this.splitScreen);
-			const newSet = this.toMediaSet(newLayout);
 
-			if (oldSet.size !== newSet.size || [...oldSet].some(x => !newSet.has(x)) || this.updatedTime !== res.updated_time) {
+			// --- 2. Detect order change (using signature) ---
+			const oldSignature = this.getPlaylistSignature(this.splitScreen);
+			const newSignature = this.getPlaylistSignature(newLayout);
+
+			console.log(oldSignature)
+			console.log(newSignature)
+
+			const orderChanged = oldSignature !== newSignature;
+
+			// --- 3. Detect DEFAULT → SERVER DEFAULT change ---
+			const sourceChanged = this.lastMediaType !== null && this.lastMediaType !== newMediaType;
+
+			// Store latest value
+			this.lastMediaType = newMediaType;
+
+			// --------------------------
+			// 🎯 CASE A: SOURCE CHANGED
+			// --------------------------
+			if (sourceChanged) {
+				console.warn("SOURCE changed → IMMEDIATE SWITCH");
+
+				clearTimeout(this.autoplayTimer);
 				this.splitScreen = this.deepCopy(newLayout);
 				this.splitScreenList = this.deepCopy(newLayout);
 				this.updatedTime = res.updated_time;
+
 				this.splitCurrentIndex = 0;
-				localStorage.removeItem('splitScreenList');
 				this.showCurrentSlide();
+				return;
+			}
+
+			// --------------------------
+			// 🎯 CASE B: ORDER CHANGED
+			// --------------------------
+			if (orderChanged) {
+				console.warn("Playlist ORDER changed → will apply AFTER loop");
+
+				// Store layout to apply later
+				this.pendingLayout = this.deepCopy(newLayout);
+				return; // ❗ Do NOT interrupt current loop
 			}
 		});
 	}
+
+
 
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
@@ -208,16 +271,29 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		// quick false->true toggle for each zone id in current zoneinfo
 		for (const z of this.zoneinfo) {
 			const id = z.id;
-			// mark false first to ensure destruction, then set true next tick
+			// If zone is single item and it's unsupported, keep player alive (do not toggle)
+			const mediaList = Array.isArray(z.media_list) ? z.media_list : [];
+			if (mediaList.length === 1) {
+				const t = this.guessTypeFromUrl(mediaList[0]?.Url || mediaList[0]?.url || '');
+				if (t !== 'video' && t !== 'image' && t !== 'pdf') {
+					// Ensure player remains (don't mark false)
+					this.showPlayerMap[id] = true;
+					continue;
+				}
+			}
+			// otherwise mark false first to ensure destruction, then set true next tick
 			this.showPlayerMap[id] = false;
 		}
 		// next tick (small delay) set them true to re-create component instances
 		setTimeout(() => {
 			for (const z of this.zoneinfo) {
-				this.showPlayerMap[z.id] = true;
+				// if previously kept true (single unsupported) we skip override; otherwise set true
+				const id = z.id;
+				if (!this.showPlayerMap[id]) {
+					this.showPlayerMap[id] = true;
+				}
 			}
 		}, 50);
-		const layout_time = this.splitScreenList[this.splitCurrentIndex]?.layout_duration ?? 10;
 	}
 
 	private nextSlideAndShow() {
@@ -240,19 +316,45 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	}
 
 	trackById(index: number, item: any): any {
-		// safe trackBy — include index so identical ids in single-layer won't confuse Angular
-		return item.id ?? index;
+		const mediaSignature = item?.media_list?.map((m: any) => m?.Url || '').join('|');
+		return item.id + '_' + mediaSignature;
 	}
+
 
 	onZoneComplete(zoneId: any) {
 		this.zoneCompletionMap[zoneId] = true;
-		const allCompleted = this.zoneinfo.every(zone => this.zoneCompletionMap[zone.id]);
-		console.log(this.zoneCompletionMap);
-		if (allCompleted && this.splitScreen.length > 1) {
-			this.nextSlideAndShow();
-			this.zoneCompletionMap = {}
+
+		const allCompleted = this.zoneinfo.every(z => this.zoneCompletionMap[z.id]);
+
+		if (!allCompleted) return;
+
+		const isLastSlide = this.splitCurrentIndex === this.splitScreen.length - 1;
+
+		// -----------------------------------------
+		// 🎯 CASE 1: We reached end of loop
+		// -----------------------------------------
+		if (isLastSlide) {
+
+			// ⏳ If pending layout exists, apply now
+			if (this.pendingLayout) {
+				console.warn("🎬 APPLYING NEW PLAYLIST AT LOOP END");
+				this.applyPendingPlaylistUpdate();
+			}
+
+			// Restart playlist from first slide
+			this.splitCurrentIndex = 0;
+			this.zoneCompletionMap = {};
+			this.showCurrentSlide();
+			return;
 		}
+
+		// -----------------------------------------
+		// 🎯 CASE 2: Mid-loop → move to next slide
+		// -----------------------------------------
+		this.zoneCompletionMap = {};
+		this.nextSlideAndShow();
 	}
+
 
 	getNetworkInfo() {
 		this.authService.getNetworkInfo(this.device).subscribe((res: any) => {
@@ -265,5 +367,14 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		clearTimeout(this.autoplayTimer);
 		this.subscription.unsubscribe();
 		if (this.intervalId) clearInterval(this.intervalId);
+	}
+	private guessTypeFromUrl(url: string): string {
+		const u = (url || '').toLowerCase();
+		if (!u) return 'other';
+		if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
+		if (u.endsWith('.pdf')) return 'pdf';
+		if (u.match(/\.(mp4|mov|webm|mkv|avi)$/)) return 'video';
+		if (u.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/)) return 'image';
+		return 'other';
 	}
 }
