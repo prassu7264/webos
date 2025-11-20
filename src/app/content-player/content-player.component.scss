@@ -24,7 +24,7 @@
 /* OUT ANIMATION — smooth, soft, cinematic */
 .fade-wrapper.fade-active {
   opacity: 0;
-  filter: blur(12px) brightness(0.7);
+  filter: blur(10px) brightness(0.7);
   transform: scale(0.97); /* tiny zoom-out */
 }
 

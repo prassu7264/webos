@@ -38,6 +38,8 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	noMediaAvailable = false;
 	private lastMediaType: string | null = null;
 	private pendingLayout: any[] | null = null;
+	private wasNoMedia = false;
+	private skipSourceChangedOnce = false;
 
 	// NEW: map to control whether each zone's <app-content-player> is rendered.
 	showPlayerMap: { [zoneId: number]: boolean } = {};
@@ -134,12 +136,15 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			// --- USE REUSABLE FUNCTION ---
 			if (this.checkNoMedia(layoutList)) {
 				this.noMediaAvailable = true;
+				this.wasNoMedia = true;
 				return;
 			}
 			// --- MEDIA EXISTS ---
 			this.noMediaAvailable = false;
-			// SHOW FIRST LAYOUT
-			this.showCurrentSlide();
+			// Only start player IF it's normal load, not recovery from no-media
+			if (!this.wasNoMedia) {
+				this.showCurrentSlide();  // start only once
+			}
 		});
 	}
 
@@ -148,7 +153,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		if (!layoutList || layoutList.length === 0) {
 			return true;
 		}
-
 		// --- COLLECT ZONES ---
 		let allZones: any[] = [];
 		layoutList.forEach((l: any) => {
@@ -164,6 +168,103 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 		// RESULT
 		return validZones.length === 0;
+	}
+
+	private checkForUpdates() {
+		this.authService.getMediafiles(this.device).subscribe((res: any) => {
+			const newLayout = res?.layout_list ?? [];
+			const newMediaType = res?.media_type ?? null;
+			const newScrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
+			const noMedia = this.checkNoMedia(newLayout);
+
+
+			// --- 1. Scrollers update ---
+			if (JSON.stringify(this.scrollers) !== JSON.stringify(newScrollers)) {
+				this.scrollers = newScrollers;
+				this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
+				this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
+			}
+
+			// --- 0. Check NO MEDIA ---
+			if (noMedia) {
+				this.noMediaAvailable = true;
+				clearTimeout(this.autoplayTimer);
+				this.autoplayTimer = null;
+				this.splitScreen = [];
+				this.splitScreenList = [];
+				this.zoneinfo = [];
+				this.zoneCompletionMap = {};
+				this.showPlayerMap = {};
+				this.wasNoMedia = true;   // mark state!
+				return;
+			}
+
+			this.noMediaAvailable = false;
+
+			//  IMPORTANT PART 
+			if (this.wasNoMedia) {
+				// STOP ANY old loop fully
+				clearTimeout(this.autoplayTimer);
+				this.autoplayTimer = null;
+				console.warn("MEDIA RESTORED → CLEAN RESTART");
+				this.wasNoMedia = false;
+				this.skipSourceChangedOnce = true;
+				// RESET state
+				this.splitCurrentIndex = 0;
+				this.zoneCompletionMap = {};
+				this.showPlayerMap = {};
+				this.pendingLayout = null;
+				this.updatedTime = res.updated_time;
+				// LOAD new layout
+				this.splitScreen = this.deepCopy(newLayout);
+				this.splitScreenList = this.deepCopy(newLayout);
+				// START NEW LOOP
+				this.showCurrentSlide();
+				return;
+			}
+
+
+			// --- 2. Detect order change (using signature) ---
+			const oldSignature = this.getPlaylistSignature(this.splitScreen);
+			const newSignature = this.getPlaylistSignature(newLayout);
+			const orderChanged = oldSignature !== newSignature;
+			// --- 3. Detect DEFAULT → SERVER DEFAULT change ---
+			const sourceChanged = this.lastMediaType !== null && this.lastMediaType !== newMediaType;
+			// Store latest value
+			this.lastMediaType = newMediaType;
+
+			// --------------------------
+			// 🎯 CASE A: SOURCE CHANGED
+			// --------------------------
+			// If we JUST recovered from NO MEDIA → ignore this one
+			if (this.skipSourceChangedOnce) {
+				console.warn("Ignoring sourceChanged because of NO MEDIA recovery");
+				this.skipSourceChangedOnce = false; // reset for next time
+				return;
+			}
+
+			if (sourceChanged) {
+				console.warn("SOURCE changed → IMMEDIATE SWITCH");
+				clearTimeout(this.autoplayTimer);
+				this.splitScreen = this.deepCopy(newLayout);
+				this.splitScreenList = this.deepCopy(newLayout);
+				this.updatedTime = res.updated_time;
+				this.splitCurrentIndex = 0;
+				this.showCurrentSlide();
+				return;
+			}
+
+			// --------------------------
+			// 🎯 CASE B: ORDER CHANGED
+			// --------------------------
+			if (orderChanged) {
+				console.warn("Playlist ORDER changed → will apply AFTER loop");
+
+				// Store layout to apply later
+				this.pendingLayout = this.deepCopy(newLayout);
+				return; // ❗ Do NOT interrupt current loop
+			}
+		});
 	}
 
 	private getPlaylistSignature(layout: any[]): string {
@@ -187,80 +288,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		this.splitScreenList = this.deepCopy(this.pendingLayout);
 		this.pendingLayout = null;
 	}
-
-	private checkForUpdates() {
-		this.authService.getMediafiles(this.device).subscribe((res: any) => {
-
-			const newLayout = res?.layout_list ?? [];
-			const newMediaType = res?.media_type ?? null;
-			const newScrollers = res?.scrollerList || res?.scrollermessage || res?.tickerList || [];
-
-			// --- 0. Check NO MEDIA ---
-			if (this.checkNoMedia(newLayout)) {
-				this.noMediaAvailable = true;
-				clearTimeout(this.autoplayTimer);
-				this.splitScreen = [];
-				this.splitScreenList = [];
-				this.zoneinfo = [];
-				this.zoneCompletionMap = {};
-				this.showPlayerMap = {};
-				return;
-			} else {
-				this.noMediaAvailable = false;
-			}
-
-			// --- 1. Scrollers update ---
-			if (JSON.stringify(this.scrollers) !== JSON.stringify(newScrollers)) {
-				this.scrollers = newScrollers;
-				this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
-				this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
-			}
-
-			// --- 2. Detect order change (using signature) ---
-			const oldSignature = this.getPlaylistSignature(this.splitScreen);
-			const newSignature = this.getPlaylistSignature(newLayout);
-
-			console.log(oldSignature)
-			console.log(newSignature)
-
-			const orderChanged = oldSignature !== newSignature;
-
-			// --- 3. Detect DEFAULT → SERVER DEFAULT change ---
-			const sourceChanged = this.lastMediaType !== null && this.lastMediaType !== newMediaType;
-
-			// Store latest value
-			this.lastMediaType = newMediaType;
-
-			// --------------------------
-			// 🎯 CASE A: SOURCE CHANGED
-			// --------------------------
-			if (sourceChanged) {
-				console.warn("SOURCE changed → IMMEDIATE SWITCH");
-
-				clearTimeout(this.autoplayTimer);
-				this.splitScreen = this.deepCopy(newLayout);
-				this.splitScreenList = this.deepCopy(newLayout);
-				this.updatedTime = res.updated_time;
-
-				this.splitCurrentIndex = 0;
-				this.showCurrentSlide();
-				return;
-			}
-
-			// --------------------------
-			// 🎯 CASE B: ORDER CHANGED
-			// --------------------------
-			if (orderChanged) {
-				console.warn("Playlist ORDER changed → will apply AFTER loop");
-
-				// Store layout to apply later
-				this.pendingLayout = this.deepCopy(newLayout);
-				return; // ❗ Do NOT interrupt current loop
-			}
-		});
-	}
-
-
 
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
