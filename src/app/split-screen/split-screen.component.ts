@@ -234,7 +234,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			this.lastMediaType = newMediaType;
 
 			// --------------------------
-			// 🎯 CASE A: SOURCE CHANGED
+			// CASE A: SOURCE CHANGED
 			// --------------------------
 			// If we JUST recovered from NO MEDIA → ignore this one
 			if (this.skipSourceChangedOnce) {
@@ -255,14 +255,14 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			}
 
 			// --------------------------
-			// 🎯 CASE B: ORDER CHANGED
+			//  CASE B: ORDER CHANGED
 			// --------------------------
 			if (orderChanged) {
 				console.warn("Playlist ORDER changed → will apply AFTER loop");
 
 				// Store layout to apply later
 				this.pendingLayout = this.deepCopy(newLayout);
-				return; // ❗ Do NOT interrupt current loop
+				return; //  Do NOT interrupt current loop
 			}
 		});
 	}
@@ -358,7 +358,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		const isLastSlide = this.splitCurrentIndex === this.splitScreen.length - 1;
 
 		// -----------------------------------------
-		// 🎯 CASE 1: We reached end of loop
+		//  CASE 1: We reached end of loop
 		// -----------------------------------------
 		if (isLastSlide) {
 
@@ -376,7 +376,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		}
 
 		// -----------------------------------------
-		// 🎯 CASE 2: Mid-loop → move to next slide
+		// CASE 2: Mid-loop → move to next slide
 		// -----------------------------------------
 		this.zoneCompletionMap = {};
 		this.nextSlideAndShow();

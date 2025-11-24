@@ -1,4 +1,5 @@
 import { Component, Input, OnInit, OnDestroy, AfterViewInit, OnChanges, SimpleChanges, ElementRef, ViewChild } from '@angular/core';
+import { loadFontDynamically } from '../utils/font-loader';
 
 export interface ScrollerItem {
 	id: number;
@@ -13,7 +14,9 @@ export interface ScrollerItem {
 	type: string;        // TOP or BOTTOM
 	isfreeze: boolean;
 	font_folder: string;
+	loadedFont?: string;
 }
+const loadedFontCache: Set<string> = new Set();
 
 @Component({
 	selector: 'app-scroller',
@@ -26,6 +29,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 	@ViewChild('scrollTrack') scrollTrack!: ElementRef;
 	public baseDuration: number = 20; // default fallback duration
 	animationReady = false;
+	private previousFontNames: string[] = [];
 
 	ngOnInit() { }
 
@@ -35,9 +39,83 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 
 	ngOnChanges(changes: SimpleChanges) {
 		if (changes['scrollers']) {
-			this.updateScrollSpeed();
+			this.checkFontChanges();
 		}
 	}
+
+
+	private async checkFontChanges() {
+		if (!this.scrollers || this.scrollers.length === 0) return;
+
+		const currentFontNames = this.scrollers.map(s => s.fontname);
+
+		// FIRST TIME → always load fonts
+		if (this.previousFontNames.length === 0) {
+			this.previousFontNames = [...currentFontNames];
+			await this.loadScrollerFonts();
+			this.updateScrollSpeed();
+			return;
+		}
+
+		// CHECK IF ANY FONTNAME CHANGED
+		const changed = currentFontNames.some((font, i) =>
+			font !== this.previousFontNames[i]
+		);
+
+		if (changed) {
+			console.log("Font name changed → Reloading fonts...");
+			this.previousFontNames = [...currentFontNames];
+
+			await this.loadScrollerFonts();
+			this.updateScrollSpeed();
+			return;
+		}
+
+		// ✔ FONT NOT CHANGED → Still re-apply loadedFont to trigger UI refresh
+		this.scrollers.forEach(s => {
+			s.loadedFont = s.font_folder;   // ⬅ RE-APPLY FONT ALWAYS
+		});
+
+	}
+
+
+
+	private async loadScrollerFonts() {
+		if (!this.scrollers || !this.scrollers.length) return;
+
+		for (let s of this.scrollers) {
+			const fontKey = `${s.font_folder}-${s.fontname}`;
+
+			//  Already loaded → skip
+			if (loadedFontCache.has(fontKey)) {
+				s.loadedFont = s.font_folder;
+				continue;
+			}
+
+			//  Invalid → skip
+			if (!s.fontname || !s.font_folder) {
+				s.loadedFont = 'sans-serif';
+				continue;
+			}
+
+			//  Load font once
+			try {
+				await loadFontDynamically(s.font_folder, s.fontname);
+				s.loadedFont = s.font_folder;
+
+				// Mark as loaded
+				loadedFontCache.add(fontKey);
+
+				// console.log("Font loaded first time:", fontKey);
+
+			} catch (err) {
+				console.error("Font load error for:", s.font_folder, err);
+				s.loadedFont = 'sans-serif';
+			}
+		}
+	}
+
+
 
 	private updateScrollSpeed() {
 		this.animationReady = false;
@@ -49,7 +127,6 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 
 			const s = this.scrollers[0];
 			const direction = s.direction || 'left';
-			const baseSpeed = Number(s.scrlspeed) || 10;
 
 			// --- DOM measurements ---
 			const wrapperWidth = wrapper.offsetWidth;
@@ -58,7 +135,6 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			const trackHeight = track.scrollHeight;
 
 			// --- Smooth speed mapping (balanced for WebOS hardware) ---
-			// scrlspeed from API (5 = slow, 10 = medium, 15 = fast)
 			const pxPerSec = 120; // smoother, hardware-friendly scale
 
 			// --- Compute distance + duration ---
@@ -74,7 +150,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 				track.style.setProperty('--start', `${wrapperHeight}px`);
 				track.style.setProperty('--trackHeight', `${trackHeight}px`);
 			}
-			
+
 			// --- Apply styles ---
 			track.style.animationDuration = `${duration.toFixed(2)}s`;
 			track.style.animationTimingFunction = 'linear';

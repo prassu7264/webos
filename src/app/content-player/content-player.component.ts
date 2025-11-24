@@ -33,9 +33,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	isOnline = true;
 	private intervalSub?: Subscription;
 	private loopToken = 0;
-
-
-
+	
 	constructor(private toastService: ToastService, private downloadService: WebosDownloadService, private connectionService: ConnectionService) { }
 
 	ngOnChanges(changes: SimpleChanges): void {
@@ -148,6 +146,56 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		}).filter(Boolean) as any[];
 	}
 
+	private handleUnsupportedFile() {
+		this.unsupportedCount++;
+
+		const total = this.totalMediaCount || this.filesData.length || 0;
+
+		// CASE 1: only one media → show full unsupported UI
+		if (total === 1) {
+			this.showUnsupportedOverlay = true;
+			return;
+		}
+
+		// CASE 2: multiple files but not all unsupported → show toast only
+		if (this.unsupportedCount < total) {
+			this.toastService.error('Unsupported file format');
+			this.nextSlideAndShow();
+			return;
+		}
+		
+		// CASE 3: all media unsupported → show overlay
+		if (this.unsupportedCount === total) {
+			this.showUnsupportedOverlay = true;
+		}
+	}
+
+	private isFileSupported(file: any): boolean {
+		if (!file || !file.Url) return false;
+
+		const url = file.Url.toLowerCase();
+
+		if (file.type === 'video') {
+			return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mkv') || url.endsWith('.mov');
+		}
+
+		if (file.type === 'image') {
+			return url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.gif');
+		}
+
+		if (file.type === 'pdf') {
+			return url.endsWith('.pdf');
+		}
+
+		if (file.type === 'youtube') {
+			return true; // always supported
+		}
+
+		return false; // unknown type → unsupported
+	}
+
+
+
 	private showCurrentSlide() {
 		const token = this.loopToken;
 		clearTimeout(this.autoplayTimer);
@@ -156,6 +204,13 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		console.log("showCurrentSlide>Filedata: ", this.filesData)
 		if (!currentFile) return;
 		if (token !== this.loopToken) return; // abort if old
+
+		// UNIVERSAL unsupported file checker (applies to ALL media types)
+		if (!this.isFileSupported(currentFile)) {
+			this.handleUnsupportedFile();
+			return;
+		}
+
 		// If overlay is active and there's only one file (unsupported), ensure we don't try to load/play it.
 		if (this.showUnsupportedOverlay && this.filesData.length === 1) {
 			// keep overlay visible, don't attempt plays — nothing more to do

@@ -1,3 +1,4 @@
+//style.scss
 @font-face {
   font-family: "DMSans";
   src: url("./assets/fonts/SFUIDisplay-Regular.otf") format("truetype");
@@ -5,85 +6,6 @@
   font-style: normal;
 }
 
-@font-face {
-  font-family: 'Aller_Rg';
-  src: url('./assets/fonts/Aller_Rg.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'chunkfive';
-  src: url('./assets/fonts/ChunkFive-Regular.otf') format('truetype');
-}
-
-@font-face {
-  font-family: 'fira-sans';
-  src: url('./assets/fonts/FiraSans-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'lato';
-  src: url('./assets/fonts/Lato-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'lobster-two';
-  src: url('./assets/fonts/Lobster Two Regular_2533.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'FFF-Tusj';
-  src: url('./assets/fonts/FFF Tusj Gras 700.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Signwood-Italic';
-  src: url('./assets/fonts/Signwood-Italic.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Signwood-Regular';
-  src: url('./assets/fonts/Signwood-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'LeagueSpartan-Bold';
-  src: url('./assets/fonts/LeagueSpartan-Bold.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Foxgrab';
-  src: url('./assets/fonts/Foxgrab.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'EspressoShow';
-  src: url('./assets/fonts/Espresso_Show.otf') format('truetype');
-}
-
-@font-face {
-  font-family: 'ParmaInitialenMK';
-  src: url('./assets/fonts/ParmaInitialenMK.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'digital-7';
-  src: url('./assets/fonts/digital-7.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'fontawesome-webfont';
-  src: url('./assets/fonts/fontawesome-webfont.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'FontAwesome';
-  src: url('./assets/fonts/Font Awesome 5 Free-Solid-900.otf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Poppins-Regular';
-  src: url('./assets/fonts/Poppins-Regular.ttf') format('truetype');
-}
 
 html,
 body {
