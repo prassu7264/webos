@@ -1,11 +1,10 @@
 //style.scss
-@font-face {
-  font-family: "DMSans";
-  src: url("./assets/fonts/SFUIDisplay-Regular.otf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
-
+// @font-face {
+//   font-family: "DMSans";
+//   src: url("./assets/fonts/SFUIDisplay-Regular.otf") format("truetype");
+//   font-weight: normal;
+//   font-style: normal;
+// }
 
 html,
 body {
@@ -22,19 +21,9 @@ body {
 
 :root {
   --color-primary: #378cee;
-  // --swal2-border-radius: 1em !important;
-  // --swal2-border: 2px solid #00c8ff !important;
-  // --swal2-confirm-button-box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px !important;
-  // --swal2-cancel-button-box-shadow: #32325d40 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px !important;
-  // --swal2-action-button-focus-box-shadow: 0 0 0 2px rgb(255, 255, 255) !important;
-  // --swal2-background:linear-gradient(135deg, #224b72, #0c3552) !important;
 }
 
-// .swal2-popup {
-//   box-shadow: 0 0 25px rgba(0, 200, 255, 0.4) !important;
-//   padding: 0.4em 3em;
-//   color: aliceblue;
-// }
+
 
 .mat-mdc-raised-button.mdc-ripple-upgraded--background-focused,
 .mat-mdc-raised-button:not(.mdc-ripple-upgraded):focus {

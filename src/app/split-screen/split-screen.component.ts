@@ -350,24 +350,19 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 	onZoneComplete(zoneId: any) {
 		this.zoneCompletionMap[zoneId] = true;
-
 		const allCompleted = this.zoneinfo.every(z => this.zoneCompletionMap[z.id]);
-
 		if (!allCompleted) return;
-
 		const isLastSlide = this.splitCurrentIndex === this.splitScreen.length - 1;
 
 		// -----------------------------------------
 		//  CASE 1: We reached end of loop
 		// -----------------------------------------
 		if (isLastSlide) {
-
-			// ⏳ If pending layout exists, apply now
+			//  If pending layout exists, apply now
 			if (this.pendingLayout) {
 				console.warn("🎬 APPLYING NEW PLAYLIST AT LOOP END");
 				this.applyPendingPlaylistUpdate();
 			}
-
 			// Restart playlist from first slide
 			this.splitCurrentIndex = 0;
 			this.zoneCompletionMap = {};
