@@ -1,0 +1,42 @@
+<!-- split-screen.component.html -->
+<div class="screen-container">
+    <!-- NO MEDIA AVAILABLE – ULTRA PREMIUM UI -->
+    <div *ngIf="noMediaAvailable" class="no-media-wrapper">
+        <div class="no-media-card">
+            <div class="icon">📁</div>
+            <div class="title">No Media Available…!</div>
+            <div class="subtitle">Please wait while your device receives media files.</div>
+            <div class="neon-loader">
+                <div class="bar"></div>
+            </div>
+        </div>
+    </div>
+    <gridster [options]="options" class="drag-content drag-handler">
+        <gridster-item *ngFor="let item of zoneinfo; trackBy: trackById" [item]="item" class="grid-item">
+            <div class="widget-content">
+                <ng-container *ngIf="showPlayerMap[item.id]">
+                    <app-content-player [filesData]="item?.media_list" [splitScreenList]="splitScreenList"
+                        [attr.key]="item.id + '-' + item.media_list?.length" [zoneId]="item.id"
+                        (zoneComplete)="onZoneComplete($event)"></app-content-player>
+                </ng-container>
+            </div>
+        </gridster-item>
+    </gridster>
+    <div class="px-4" style="position: absolute;bottom: 4em;z-index: 1;right: 1.5em;">
+        <ng-container [ngSwitch]="status">
+            <img [ngClass]="status" *ngSwitchCase="'ONLINE'" style="width: 70px;" src="assets/images/ONLINE.png"
+                alt="⦿">
+            <img [ngClass]="status" *ngSwitchCase="'OFFLINE'" style="width: 70px;" src="assets/images/OFFLINE.png"
+                alt="⦿">
+        </ng-container>
+    </div>
+
+    <ng-container *ngIf="rebuildScroller">
+        <!-- Top Scroller -->
+        <app-scroller *ngIf="topScrollers.length" [scrollers]="topScrollers" class="ticker-bar top-ticker">
+        </app-scroller>
+        <!-- Bottom Scroller -->
+        <app-scroller *ngIf="bottomScrollers.length" [scrollers]="bottomScrollers" class="ticker-bar bottom-ticker">
+        </app-scroller>
+    </ng-container>
+</div>
