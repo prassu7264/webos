@@ -40,6 +40,8 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private pendingLayout: any[] | null = null;
 	private wasNoMedia = false;
 	private skipSourceChangedOnce = false;
+	rebuildScroller = true;
+
 
 	// NEW: map to control whether each zone's <app-content-player> is rendered.
 	showPlayerMap: { [zoneId: number]: boolean } = {};
@@ -170,6 +172,24 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		return validZones.length === 0;
 	}
 
+	private getScrollerSignature(list: any[]) {
+		return list
+			.map(s => ({
+				id: s.id || "",
+				msg: s.message || "",
+				font: s.fontname || "",
+				folder: s.font_folder || "",
+				speed: s.scrlspeed || "",
+				type: s.type || "",
+				color: s.fncolor || "",
+				bg: s.bgcolor || "",
+				size: s.fnsize || ""
+			}))
+			.map(s => JSON.stringify(s))
+			.join("|");
+	}
+
+
 	private checkForUpdates() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
 			const newLayout = res?.layout_list ?? [];
@@ -179,10 +199,26 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 
 			// --- 1. Scrollers update ---
-			if (JSON.stringify(this.scrollers) !== JSON.stringify(newScrollers)) {
+			// --- 1. Scrollers update ---
+
+			const oldSig = this.getScrollerSignature(this.scrollers);
+			const newSig = this.getScrollerSignature(newScrollers);
+			if (oldSig !== newSig) {
+
+				console.warn("SCROLLER UPDATED → Full DOM rebuild");
+
+				this.rebuildScroller = false;
+
 				this.scrollers = newScrollers;
-				this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
-				this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
+				this.topScrollers = newScrollers.filter((s: any) => s.type === 'TOP');
+				this.bottomScrollers = newScrollers.filter((s: any) => s.type === 'BOTTOM');
+
+				setTimeout(() => {
+					this.rebuildScroller = true;
+				}, 0);
+
+			} else {
+				// No actual change → DO NOTHING → Prevent restart
 			}
 
 			// --- 0. Check NO MEDIA ---
