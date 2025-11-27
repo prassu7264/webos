@@ -293,13 +293,36 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			// --------------------------
 			//  CASE B: ORDER CHANGED
 			// --------------------------
-			if (orderChanged) {
-				console.warn("Playlist ORDER changed → will apply AFTER loop");
+			// Playlist Order Changes Apply after playlist Loop End
+			// if (orderChanged) {
+			// 	console.warn("Playlist ORDER changed → will apply AFTER loop");
 
-				// Store layout to apply later
-				this.pendingLayout = this.deepCopy(newLayout);
-				return; //  Do NOT interrupt current loop
+			// 	// Store layout to apply later
+			// 	this.pendingLayout = this.deepCopy(newLayout);
+			// 	return; //  Do NOT interrupt current loop
+			// }
+			// Playlist Order Changes instant Apply
+			if (orderChanged) {
+				console.warn("Playlist ORDER changed → IMMEDIATE RESTART from index 0");
+
+				clearTimeout(this.autoplayTimer);
+				this.autoplayTimer = null;
+
+				this.splitScreen = this.deepCopy(newLayout);
+				this.splitScreenList = this.deepCopy(newLayout);
+				this.updatedTime = res.updated_time;
+
+				// ALWAYS RESTART INDEX TO ZERO
+				this.splitCurrentIndex = 0;
+
+				this.zoneCompletionMap = {};
+				this.showPlayerMap = {};
+				this.pendingLayout = null;
+
+				this.showCurrentSlide();
+				return;
 			}
+
 		});
 	}
 
