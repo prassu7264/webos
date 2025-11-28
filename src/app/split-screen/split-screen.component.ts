@@ -319,6 +319,13 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				this.showPlayerMap = {};
 				this.pendingLayout = null;
 
+				// 🆕 RESTART SCROLLER ALSO
+				console.warn("Restarting SCROLLER due to playlist ORDER change");
+				this.rebuildScroller = false;
+				setTimeout(() => {
+					this.rebuildScroller = true;
+				}, 0);
+
 				this.showCurrentSlide();
 				return;
 			}
