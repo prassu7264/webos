@@ -33,7 +33,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 	isOnline = true;
 	private intervalSub?: Subscription;
 	private loopToken = 0;
-	
+
 	constructor(private toastService: ToastService, private downloadService: WebosDownloadService, private connectionService: ConnectionService) { }
 
 	ngOnChanges(changes: SimpleChanges): void {
@@ -163,7 +163,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 			this.nextSlideAndShow();
 			return;
 		}
-		
+
 		// CASE 3: all media unsupported → show overlay
 		if (this.unsupportedCount === total) {
 			this.showUnsupportedOverlay = true;
@@ -238,12 +238,49 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 			videoEl.currentTime = 0;
 			try { videoEl.load(); } catch (e) { /* ignore */ }
 
-			videoEl.onended = () => {
-				// console.log("Current Index!" + this.currentIndex)
-				if (token !== this.loopToken) return;
-				this.nextSlideAndShow();
-				try { videoEl.onended = null; } catch (e) { }
+			// Fallback helper for unknown durations
+			const forceNext = (ms: number) => {
+				this.autoplayTimer = setTimeout(() => {
+					if (token !== this.loopToken) return;
+					this.nextSlideAndShow();
+				}, ms);
 			};
+
+			videoEl.onloadedmetadata = () => {
+				if (token !== this.loopToken) return;
+
+				const duration = videoEl.duration;
+				if (!duration || isNaN(duration) || duration === Infinity) {
+					// Fallback for weird metadata behavior
+					forceNext(8000);
+					return;
+				}
+
+				// Always start playback
+				tryPlay();
+
+				if (duration > 10) {
+					// ---- CASE 1: LONG VIDEO (>10 sec) ----
+					// Use onended normally
+					videoEl.onended = () => {
+						if (token !== this.loopToken) return;
+						this.nextSlideAndShow();
+						try { videoEl.onended = null; } catch { }
+					};
+				} else {
+					// ---- CASE 2: SHORT VIDEO (<=10 sec) ----
+					// DO NOT USE onended (it may not fire on webOS/Tizen)
+					videoEl.onended = null;
+
+					// Trigger next slide earlier
+					this.autoplayTimer = setTimeout(() => {
+						if (token !== this.loopToken) return;
+						this.nextSlideAndShow();
+					}, (duration * 1000) + 300);
+				}
+			};
+
+
 
 			let attempts = 0;
 			const maxAttempts = 3;
