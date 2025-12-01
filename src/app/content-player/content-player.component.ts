@@ -129,17 +129,18 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 			const norm = (remoteUrl || '').split('?')[0];
 
 			// --- Skip YouTube items ALWAYS ---
-			if (remoteUrl.includes('youtube.com') || remoteUrl.includes('youtu.be')) {
-				console.warn(" Skipping YouTube content:", remoteUrl);
-				return null;
-			}
+			// if (remoteUrl.includes('youtube.com') || remoteUrl.includes('youtu.be')) {
+			// 	console.warn(" Skipping YouTube content:", remoteUrl);
+			// 	return null;
+			// }
 
 			const downloaded = downloadedMap[norm] ?? downloadedMap[remoteUrl];
 			if (isOffline && !downloaded) return null;
 			const playUrl = downloaded ? downloaded.url : remoteUrl;
 			const lurl = (remoteUrl || '').toLowerCase();
 			let type: any = 'other';
-			if (/\.(mp4|mov|avi|mkv|webm)$/i.test(lurl)) type = 'video';
+			if (lurl.includes('youtube.com') || lurl.includes('youtu.be')) type = 'youtube';
+			else if (/\.(mp4|mov|avi|mkv|webm)$/i.test(lurl)) type = 'video';
 			else if (/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/i.test(lurl)) type = 'image';
 			else if (lurl.endsWith('.pdf')) type = 'pdf';
 			return { ...file, remoteUrl, Url: playUrl, type };
@@ -368,7 +369,9 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 				this.nextSlideAndShow();
 			}, 10000);
 		} else if (currentFile.type === 'youtube') {
-			this.nextSlideAndShow();
+			if (!this.isOnline) {
+				this.nextSlideAndShow();
+			}
 			this.resetPlayerForYouTubeForCurrentIndex();
 		} else if (currentFile.type === 'pdf') {
 
@@ -410,7 +413,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		}
 	}
 
-	onVideoEnded(event: { success?: boolean; message?: string } = { success: true }) {
+	onVideoEnded(event: { success?: boolean; message?: string } = { success: true }, type: any) {
 		if (event && event.success === false && event.message) {
 			this.toastService.error(event.message);
 		}
