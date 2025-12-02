@@ -260,7 +260,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 				// Always start playback
 				tryPlay();
 
-				if (duration > 10) {
+				if (duration > 10 || duration < 6) {
 					// ---- CASE 1: LONG VIDEO (>10 sec) ----
 					// Use onended normally
 					videoEl.onended = () => {

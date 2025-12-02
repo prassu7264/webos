@@ -36,6 +36,8 @@ export class LoginComponent implements OnInit, AfterViewInit {
 	isExistedCalled = false;
 	isNewRegistration: boolean = false;
 	isAnypopped = false;
+	isChecking = false;
+	isColdBoot: boolean = false;
 	version = clienturl.CURRENT_VERSION();
 	contact: any = "Lumocast Digital Signage Pvt Ltd | Support@Cansignage.Com | +91 91523 98498";
 
@@ -54,6 +56,14 @@ export class LoginComponent implements OnInit, AfterViewInit {
 			deviceCode: ['', [Validators.required, Validators.pattern(/^IQW[0-9]+$/i)]]
 		});
 
+		// Loader only on cold boot – run once!
+		const coldBoot = !sessionStorage.getItem("boot_completed");
+		if (coldBoot) {
+			this.isColdBoot = true;
+			this.isChecking = true;    // <── FIX
+			sessionStorage.setItem("boot_completed", "true");
+		}
+
 		let username = localStorage.getItem('username') || "";
 		if (username) {
 			this.deviceForm.get('deviceCode')?.setValue(username);
@@ -69,7 +79,9 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
 				// Trigger approval check immediately after QR scan
 				this.isExistedCalled = false;   // reset so popup will show
-				// this.checkDeviceAndNavigate();
+				if (this.isVideoPlayed) {
+					this.checkDeviceAndNavigate();
+				}
 			}
 		});
 
@@ -78,6 +90,12 @@ export class LoginComponent implements OnInit, AfterViewInit {
 		if (this.isVideoPlayed) {
 			this.startPolling();
 		}
+
+		//  Important for cold boot: run immediate verification if UID already available
+		if (this.deviceUID) {
+			this.checkDeviceAndNavigate();
+		}
+
 	}
 
 	startPolling() {
@@ -123,8 +141,18 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
 		this.authService.isExistedDevice(this.deviceUID).subscribe((res: any) => {
 
+			// After 1st call, hide loader
+			if (this.isColdBoot) {
+				this.isChecking = false;  // <── FIX
+				this.isColdBoot = false;
+			}
+
 			// API failed / network issue
 			if (res?.status !== "success") {
+				// Stop loader ONLY on cold boot
+				if (this.isColdBoot) {
+					this.isChecking = false;
+				}
 				this.isOpenSwalAlert = false;
 				if (!this.isExistedCalled) {
 					this.toastService.error(res?.message || "Device verification failed");
@@ -133,6 +161,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
 				return;
 			}
 
+			// Stop loader ONLY on cold boot
+			if (this.isColdBoot) {
+				this.isChecking = false;
+			}
 			const { client_status, device_status, isexpired } = res;
 
 			//  Approved Device
@@ -168,9 +200,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 				return;
 			}
 
-			//  Approval Pending
 			// Approval Pending (QR + Manual)
-			// Approval Pending
 			if (client_status === true && device_status === false && !isexpired) {
 
 				this.type = "Approval Pending...!";
@@ -188,7 +218,6 @@ export class LoginComponent implements OnInit, AfterViewInit {
 			}
 		});
 	}
-
 
 	private generateQRCode(uid: string): void {
 		const qrcodeEl = document.getElementById("qrcode");

@@ -1,4 +1,3 @@
-
 * {
     margin: 0;
     padding: 0;
@@ -122,3 +121,85 @@ body {
         opacity: 1;
     }
 }
+
+
+/* ---------------- PREMIUM OVERLAY ---------------- */
+.processing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 99999;
+}
+
+/* ---------------- PREMIUM RING LOADER ---------------- */
+.loader {
+    width: min(18vw, 160px);
+    height: min(18vw, 160px);
+
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: calc(min(1.4vw, 8px)) solid rgba(0, 200, 255, 0.15);
+    border-color: #00b7ff #0000;
+
+    animation: l1 1s infinite;
+
+    box-shadow: 
+        0 0 calc(min(2vw, 18px)) rgba(0, 200, 255, 0.35),
+        0 0 calc(min(3vw, 28px)) rgba(0, 200, 255, 0.2);
+
+    position: relative;
+}
+
+.loader::after {
+    content: "";
+    position: absolute;
+    inset: 23%;
+    background: radial-gradient(circle, #00c8ff 0%, #062a42 65%);
+    border-radius: 50%;
+    animation: pulseInner 1.6s ease-in-out infinite;
+    box-shadow: 0 0 calc(min(2.5vw, 22px)) rgba(0, 200, 255, 0.55);
+}
+
+/* ---------------- PREMIUM TEXT ---------------- */
+.loader-text {
+    margin-top: 3.5vh;
+    font-family: "Orbitron", sans-serif;
+    font-weight: 600;
+
+    color: #00c8ff;
+    font-size: min(5.5vw, 46px);
+    letter-spacing: 1.5px;
+
+    text-shadow: 
+        0 0 6px rgba(0, 200, 255, 0.75),
+        0 0 10px rgba(0, 200, 255, 0.45);
+
+    line-height: 1.35;
+    padding-bottom: 10px;
+    overflow: visible;
+}
+
+/* ---------------- ANIMATIONS ---------------- */
+@keyframes rotateRing {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulseInner {
+    0%   { transform: scale(0.95); opacity: 0.7; }
+    50%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+@keyframes l1 {to{transform: rotate(.5turn)}}

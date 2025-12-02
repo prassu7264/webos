@@ -51,11 +51,17 @@
     </div>
     <div class="overlay" *ngIf="isOpenSwalAlert">
         <div class="card">
-            <img class="icon" src="./assets/images/information.png"/>
+            <img class="icon" src="./assets/images/information.png" />
             <h1 class="title">{{type}}</h1>
             <p class="text">{{text}}</p>
             <span class="text">{{contact}}</span>
         </div>
     </div>
+
+    <div class="processing-overlay" *ngIf="isChecking && isVideoPlayed">
+        <div class="loader"></div>
+        <p class="loader-text">Checking device…</p>
+    </div>
+
 
 </section>
