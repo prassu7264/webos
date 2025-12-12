@@ -51,10 +51,11 @@ export class PdfViewerComponent implements OnChanges, OnDestroy {
 		// console.log(`📄 Loaded PDF with ${this.totalPages} pages`);
 
 		if (this.totalPages > 0) {
-			if (this.isScroll) {
-				console.log("isScroll Works!")
-				setTimeout(() => this.startSlideShow(), 1000);
-			}
+			setTimeout(() => this.startSlideShow(), 1000);
+			// if (this.isScroll) {
+			// 	console.log("isScroll Works!")
+			// setTimeout(() => this.startSlideShow(), 1000);
+			// }
 		} else {
 			console.error("Could not detect pages in PDF");
 			this.pdfEnded.emit({ success: false, message: "Could not detect pages in PDF" });

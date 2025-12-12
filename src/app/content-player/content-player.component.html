@@ -17,7 +17,7 @@
             </app-youtube-player>
         </ng-container>
 
-        <app-pdf-viewer *ngSwitchCase="'pdf'" [loop]="filesData.length === 1" (pdfEnded)="onVideoEnded($event,'pdf')"
+        <app-pdf-viewer *ngSwitchCase="'pdf'" [loop]="filesData.length === 1 && splitScreenList.length === 1" (pdfEnded)="onVideoEnded($event,'pdf')"
             [url]="filesData[currentIndex].Url">
         </app-pdf-viewer>
     </div>

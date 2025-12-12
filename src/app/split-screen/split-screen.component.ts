@@ -199,8 +199,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 
 			// --- 1. Scrollers update ---
-			// --- 1. Scrollers update ---
-
 			const oldSig = this.getScrollerSignature(this.scrollers);
 			const newSig = this.getScrollerSignature(newScrollers);
 			if (oldSig !== newSig) {
@@ -260,7 +258,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			}
 
 
-			// --- 2. Detect order change (using signature) ---
+			// --- 2. Detect order(Default -> Server Default) change (using signature) ---
 			const oldSignature = this.getPlaylistSignature(this.splitScreen);
 			const newSignature = this.getPlaylistSignature(newLayout);
 			const orderChanged = oldSignature !== newSignature;
@@ -301,6 +299,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			// 	this.pendingLayout = this.deepCopy(newLayout);
 			// 	return; //  Do NOT interrupt current loop
 			// }
+
 			// Playlist Order Changes instant Apply
 			if (orderChanged) {
 				console.warn("Playlist ORDER changed → IMMEDIATE RESTART from index 0");

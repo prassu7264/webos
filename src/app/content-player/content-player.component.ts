@@ -100,7 +100,7 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 		/** FIX 1 — If only 1 file and its type is neither video nor image nor pdf → unsupported */
 		if (this.filesData.length === 1) {
 			const f = this.filesData[0];
-			if (f.type !== 'video' && f.type !== 'image' && f.type !== 'pdf') {
+			if (f.type !== 'video' && f.type !== 'image' && f.type !== 'pdf' && f.type !== 'youtube') {
 				this.showUnsupportedOverlay = true;
 				// keep unsupportedCount/total consistent
 				this.totalMediaCount = 1;
@@ -364,6 +364,9 @@ export class ContentPlayerComponent implements OnChanges, AfterViewInit, OnDestr
 			};
 
 		} else if (currentFile.type === 'image') {
+			if (this.filesData.length === 1) {
+				return; // Just show image forever, no looping
+			}
 			this.autoplayTimer = setTimeout(() => {
 				if (token !== this.loopToken) return;
 				this.nextSlideAndShow();
