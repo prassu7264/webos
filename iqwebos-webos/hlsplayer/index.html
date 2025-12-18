@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HLS Player</title>
+    <script src="./hls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: Arial;
+        }
+
+        #login-container {
+            padding: 20px;
+            background: #fff;
+            color: #000;
+        }
+
+        #player-container {
+            display: none;
+        }
+
+        video {
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .loading {
+            color: orange;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-container">
+        <h3>Enter Your Url to Play</h3>
+        <input type="text" id="jwtToken" style="width: 100%;"
+            value="http://ptu.ridsys.in/riptv/live/Testing_drm/suntvhd/index.m3u8"
+            placeholder="Paste your JWT token here">
+        <button id="loadVideoButton">Load Video</button>
+        <div id="status"></div>
+    </div>
+
+    <div id="player-container">
+        <video id="videoPlayer"></video>
+    </div>
+    <script>
+        var hls = null;
+
+        async function loadVideo(m3u8Url) {
+            let status = document.getElementById('status');
+            let video = document.getElementById('videoPlayer');
+
+            status.textContent = "Logging in...";
+            status.className = "loading";
+
+            let accessToken = null;
+            try {
+                // ... (Your login code is perfect) ...
+                let loginRes = await fetch("http://ptu.ridsys.in:8585/rencoder/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: "admin", password: "Encoder_24" })
+                });
+                let loginData = await loginRes.json();
+                console.log("Login Response:", loginData);
+                accessToken = loginData.accessToken;
+                if (!accessToken) {
+                    status.textContent = "Login failed: No token.";
+                    status.className = "error";
+                    return;
+                }
+                status.textContent = "Token received. Loading video...";
+                status.className = "loading";
+            } catch (err) {
+                console.error("Login Error:", err);
+                status.textContent = "Login error!";
+                status.className = "error";
+                return;
+            }
+
+            if (hls) hls.destroy();
+
+            // --- THIS IS THE CORRECT LOGIC ---
+            // We ONLY use Hls.js because it's the only
+            // way to add the Authorization token.
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    xhrSetup: function (xhr) {
+                        xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+                    }
+                });
+
+                hls.loadSource(m3u8Url);
+                hls.attachMedia(video);
+
+                // --- FIX FOR "STUCKING" ---
+                // This checks for multiple quality levels and 
+                // forces the lowest one to prevent buffering.
+                hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+                    console.log("Manifest loaded, levels found:", data.levels);
+
+                    if (data.levels.length > 1) {
+                        console.log("Forcing lowest quality (level 0) to prevent 'stucking'.");
+                        hls.startLevel = 0; // Force lowest quality
+                    }
+
+                    status.textContent = "Playing...";
+                    status.className = "success";
+                    video.play();
+                });
+
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    console.error("HLS Error:", data);
+                    status.textContent = data.details;
+                    status.className = "error";
+                });
+
+                document.getElementById("player-container").style.display = "block";
+                document.getElementById("login-container").style.display = "none";
+
+            } else {
+                // This will show if Hls.js isn't supported at all
+                status.textContent = "HLS.js is not supported on this device.";
+                status.className = "error";
+            }
+        }
+
+        // ... (Your button click listener is perfect) ...
+        document.getElementById("loadVideoButton").addEventListener("click", function () {
+            let url = document.getElementById("jwtToken").value.trim();
+            if (url === "") {
+                status.textContent = "Please enter a URL.";
+                status.className = "error";
+            } else {
+                loadVideo(url);
+            }
+        });
+    </script>
+    <!-- <script>
+        var hls = null;
+
+        async function loadVideo(m3u8Url) {
+            let status = document.getElementById('status');
+            let video = document.getElementById('videoPlayer');
+
+            status.textContent = "Logging in...";
+            status.className = "loading";
+
+            let accessToken = null;
+            try {
+                let loginRes = await fetch("http://ptu.ridsys.in:8585/rencoder/api/auth/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        username: "admin",
+                        password: "Encoder_24"
+                    })
+                });
+
+                let loginData = await loginRes.json();
+                console.log("Login Response:", loginData);
+
+                accessToken = loginData.accessToken;
+                if (!accessToken) {
+                    status.textContent = "Login failed: No token.";
+                    status.className = "error";
+                    return;
+                }
+
+                status.textContent = "Token received. Loading video...";
+                status.className = "loading";
+            } catch (err) {
+                console.error("Login Error:", err);
+                status.textContent = "Login error!";
+                status.className = "error";
+                return;
+            }
+
+            if (hls) hls.destroy();
+
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    xhrSetup: function (xhr) {
+                        xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+                    }
+                });
+
+                hls.loadSource(m3u8Url);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    status.textContent = "Playing...";
+                    status.className = "success";
+                    video.play();
+                });
+
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    console.error("HLS Error:", data);
+                    status.textContent = data.details;
+                    status.className = "error";
+                });
+
+                document.getElementById("player-container").style.display = "block";
+                document.getElementById("login-container").style.display = "none";
+
+            } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                video.src = m3u8Url;
+                status.textContent = "Playing (native HLS)...";
+                video.play();
+            }
+        }
+
+        document.getElementById("loadVideoButton").addEventListener("click", function () {
+            let url = document.getElementById("jwtToken").value.trim();
+            if (url === "") {
+                status.textContent = "Please enter a URL.";
+                status.className = "error";
+            } else {
+                loadVideo(url);
+            }
+        });
+    </script> -->
+
+</body>
+
+</html>

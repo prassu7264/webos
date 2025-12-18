@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clappr Player with Auth</title>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: Arial;
+        }
+
+        #login-container {
+            padding: 20px;
+            background: #fff;
+            color: #000;
+        }
+
+        #player-container {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .loading { color: orange; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+
+<body>
+    <div id="login-container">
+        <h3>Enter Your Url to Play (Clappr)</h3>
+        <input type="text" id="jwtToken" style="width: 100%;"
+            value="http://ptu.ridsys.in/riptv/live/Testing_drm/suntvhd/index.m3u8"
+            placeholder="Paste your URL here">
+        <button id="loadVideoButton">Load Video</button>
+        <div id="status"></div>
+    </div>
+
+    <div id="player-container"></div>
+
+    <script>
+        var playerInstance = null;
+
+        async function loadVideo(m3u8Url) {
+            let status = document.getElementById('status');
+            
+            status.textContent = "Logging in...";
+            status.className = "loading";
+
+            let accessToken = null;
+            try {
+                // 1. Perform Login to get Token
+                let loginRes = await fetch("http://ptu.ridsys.in:8585/rencoder/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: "admin", password: "Encoder_24" })
+                });
+                let loginData = await loginRes.json();
+                console.log("Login Response:", loginData);
+                accessToken = loginData.accessToken;
+
+                if (!accessToken) {
+                    status.textContent = "Login failed: No token.";
+                    status.className = "error";
+                    return;
+                }
+                status.textContent = "Token received. Loading Clappr...";
+                status.className = "loading";
+            } catch (err) {
+                console.error("Login Error:", err);
+                status.textContent = "Login error!";
+                status.className = "error";
+                return;
+            }
+
+            // 2. Destroy previous player if exists
+            if (playerInstance) {
+                playerInstance.destroy();
+                playerInstance = null;
+            }
+
+            // 3. Switch UI
+            document.getElementById("player-container").style.display = "block";
+            document.getElementById("login-container").style.display = "none";
+
+            // 4. Initialize Clappr
+            playerInstance = new Clappr.Player({
+                source: m3u8Url,
+                parentId: "#player-container",
+                width: '100%',
+                height: '100%',
+                autoPlay: true,
+                // This is where we inject the Token into HLS.js logic inside Clappr
+                playback: {
+                    hlsjsConfig: {
+                        xhrSetup: function(xhr, url) {
+                            xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+                        },
+                        // Optional: Force start level if needed (like in your previous code)
+                        // startLevel: 0 
+                    }
+                },
+                events: {
+                    onReady: function() {
+                        console.log("Clappr is ready");
+                        status.textContent = "Playing...";
+                        status.className = "success";
+                    },
+                    onError: function(e) {
+                        console.error("Clappr Error:", e);
+                        status.textContent = "Player Error";
+                        status.className = "error";
+                    }
+                }
+            });
+        }
+
+        // Button Listener
+        document.getElementById("loadVideoButton").addEventListener("click", function () {
+            let url = document.getElementById("jwtToken").value.trim();
+            if (url === "") {
+                document.getElementById('status').textContent = "Please enter a URL.";
+                document.getElementById('status').className = "error";
+            } else {
+                loadVideo(url);
+            }
+        });
+    </script>
+</body>
+</html>

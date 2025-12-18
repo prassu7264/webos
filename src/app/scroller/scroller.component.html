@@ -1,0 +1,8 @@
+<div *ngIf="scrollers.length" #scrollWrapper class="scroll-wrapper" [ngClass]="{'hidden-init': !animationReady}">
+  <div #scrollTrack class="scroll-track" [class.left]="scrollers[0].direction === 'left'">
+    <div class="scroll-item" *ngFor="let s of scrollers" [style.color]="s.fncolor" [style.fontSize]="s.fnsize + 'px'"
+      [style.fontFamily]="s.loadedFont" [style.background]="s.bgcolor" [style.padding]="calcPadding(s)">
+      {{ s.message }}
+    </div>
+  </div>
+</div>
