@@ -38,7 +38,4 @@ export class clienturl {
         return 'https://ds.iqtv.in:8080/iqworld';
         //  return 'http://192.168.70.100:8585/iqworld';
     }
-
-    
-
 }

@@ -50,6 +50,12 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	@ViewChild('exitconfirm', { static: true }) exitconfirm!: TemplateRef<any>;
 	pendriveDialogRef?: MatDialogRef<any>;
 	isPendriveNotDetected = true;
+	activeTopScrollerIndex = 0;
+	activeBottomScrollerIndex = 0;
+	activeTopScroller: any = null;
+	activeBottomScroller: any = null;
+	topScrollerTimer: any;
+	bottomScrollerTimer: any;
 	private pendriveCheckCount = 0;
 	private hasShownCopiedContentToast = false;
 	private pendriveCheckInterval?: any;
@@ -353,10 +359,44 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				type: s.type || "",
 				color: s.fncolor || "",
 				bg: s.bgcolor || "",
-				size: s.fnsize || ""
+				size: s.fnsize || "",
+				logo: s.logo || ""
 			}))
 			.map(s => JSON.stringify(s))
 			.join("|");
+	}
+
+	private startTopScroller() {
+		if (!this.topScrollers.length) return;
+
+		clearTimeout(this.topScrollerTimer);
+
+		this.activeTopScroller =
+			this.topScrollers[this.activeTopScrollerIndex];
+
+		this.rebuildScroller = false;
+		setTimeout(() => (this.rebuildScroller = true), 0);
+
+		setTimeout(() => {
+			const duration = this.calculateScrollerDuration(this.activeTopScroller);
+			this.topScrollerTimer = setTimeout(() => {
+				this.activeTopScrollerIndex =
+					(this.activeTopScrollerIndex + 1) % this.topScrollers.length;
+				this.startTopScroller();
+			}, duration);
+		}, 50);
+	}
+
+	private calculateScrollerDuration(scroller: any): number {
+		const speed = Number(scroller?.scrlspeed || 30);
+
+		const textEl = document.querySelector('.scroller-text') as HTMLElement;
+		const textWidth = textEl?.scrollWidth || 1000;
+
+		const screenWidth = window.innerWidth;
+		const logoWidth = scroller?.logo ? 80 : 0;
+
+		return ((textWidth + screenWidth + logoWidth) / speed) * 1000;
 	}
 
 	private checkNoMedia(layoutList: any[]): boolean {
@@ -412,6 +452,9 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			this.splitCurrentIndex = 0;
 			this.showCurrentSlide();
+			this.startTopScroller();
+			// this.startBottomScroller();
+
 			// --- USE REUSABLE FUNCTION ---
 			if (this.checkNoMedia(layoutList)) {
 				this.noMediaAvailable = true;
@@ -438,15 +481,12 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			const oldSig = this.getScrollerSignature(this.scrollers);
 			const newSig = this.getScrollerSignature(newScrollers);
 			if (oldSig !== newSig) {
-
 				console.warn("SCROLLER UPDATED → Full DOM rebuild");
-
 				this.rebuildScroller = false;
-
 				this.scrollers = newScrollers;
 				this.topScrollers = newScrollers.filter((s: any) => s.type === 'TOP');
 				this.bottomScrollers = newScrollers.filter((s: any) => s.type === 'BOTTOM');
-
+				this.activeTopScrollerIndex = 0;
 				setTimeout(() => {
 					this.rebuildScroller = true;
 				}, 0);
