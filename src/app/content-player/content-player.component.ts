@@ -127,8 +127,6 @@ export class ContentPlayerComponent implements OnChanges {
 			videoEl.removeAttribute('src');
 			videoEl.src = currentFile.downloadedUrl || currentFile.Url;
 			videoEl.currentTime = 0;
-			console.log(videoEl.src);
-
 			const zones = this.splitScreenList?.find(l => l.zonelist?.some((z: any) => z.id === this.zoneId))?.zonelist || [];
 			const videoZone = zones.find((z: any) => z.media_list?.some((m: any) => m.Filename?.toLowerCase().endsWith('.mp4')));
 			const maxZoneDuration = Math.max(...zones.map((z: any) => Number(z.zone_duration)));
@@ -217,13 +215,28 @@ export class ContentPlayerComponent implements OnChanges {
 			};
 		}
 		else if (currentFile.type === 'image') {
-			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
+
+			const isPendriveMode = sessionStorage.getItem('ModeConfiguration') === 'true';
+
+			let delayMs = 10000; // default content-player behavior
+
+			if (isPendriveMode) {
+				const pendriveDelay = Number(localStorage.getItem('imageDelay'));
+				delayMs = (pendriveDelay > 0 ? pendriveDelay : 10) * 1000;
+			}
+
+			console.log('🖼️ Image delay:', delayMs, 'ms', 'Pendrive:', isPendriveMode);
+
+			this.autoplayTimer = setTimeout(() => {
+				this.nextSlideAndShow();
+			}, delayMs);
 		} else if (currentFile.type === 'youtube') {
 			if (!this.isOnline) {
 				this.nextSlideAndShow();
 			}
 			this.resetPlayerForYouTubeForCurrentIndex();
 		} else if (currentFile.type === 'pdf') {
+			//Nothing to change here
 		} else {
 			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
 		}

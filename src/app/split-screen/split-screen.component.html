@@ -22,7 +22,7 @@
         </gridster-item>
     </gridster>
 
-    <div class="px-4" style="position: absolute;bottom: 4em;z-index: 1;right: 1.5em;">
+    <div *ngIf="!isPendriveMode" class="px-4" style="position: absolute;bottom: 4em;z-index: 1;right: 1.5em;">
         <ng-container [ngSwitch]="status">
             <img [ngClass]="status" *ngSwitchCase="'ONLINE'" style="width: 70px;" src="assets/images/ONLINE.png"
                 alt="⦿">
@@ -30,15 +30,14 @@
                 alt="⦿">
         </ng-container>
     </div>
-    <ng-container>
+    <ng-container *ngIf="rebuildScroller">
         <!-- Top Scroller -->
-        <app-scroller *ngIf="topScrollers.length" [scrollers]="topScrollers" class="ticker-bar top-ticker">
+        <app-scroller *ngIf="topScrollers.length && !isPendriveMode && status === 'ONLINE'" [scrollers]="topScrollers" class="ticker-bar top-ticker">
         </app-scroller>
         <!-- Bottom Scroller -->
-        <app-scroller *ngIf="bottomScrollers.length" [scrollers]="bottomScrollers" class="ticker-bar bottom-ticker">
+        <app-scroller *ngIf="bottomScrollers.length && !isPendriveMode && status === 'ONLINE'" [scrollers]="bottomScrollers" class="ticker-bar bottom-ticker">
         </app-scroller>
     </ng-container>
-
 </div>
 
 <ng-template #exitconfirm>

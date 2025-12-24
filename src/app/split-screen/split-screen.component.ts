@@ -127,6 +127,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				tap((newState: ConnectionState) => {
 					this.currentState = newState;
 					this.status = newState.hasNetworkConnection ? 'ONLINE' : 'OFFLINE';
+					if (this.status === 'OFFLINE') clearTimeout(this.topScrollerTimer);
 				})
 			).subscribe()
 		);
@@ -369,6 +370,12 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private startTopScroller() {
 		if (!this.topScrollers.length) return;
 
+		if (!this.canPlayScroller()) {
+			this.activeTopScroller = null;
+			clearTimeout(this.topScrollerTimer);
+			return;
+		}
+
 		clearTimeout(this.topScrollerTimer);
 
 		this.activeTopScroller =
@@ -386,6 +393,15 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			}, duration);
 		}, 50);
 	}
+
+	private canPlayScroller(): boolean {
+		return (
+			!this.isPendriveMode &&
+			this.status === 'ONLINE' &&
+			!this.isPendriveModePlaying
+		);
+	}
+
 
 	private calculateScrollerDuration(scroller: any): number {
 		const speed = Number(scroller?.scrlspeed || 30);
@@ -452,7 +468,10 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			this.splitCurrentIndex = 0;
 			this.showCurrentSlide();
-			this.startTopScroller();
+			if (this.canPlayScroller()) {
+				this.startTopScroller();
+			}
+
 			// this.startBottomScroller();
 
 			// --- USE REUSABLE FUNCTION ---
@@ -521,6 +540,8 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				// RESET state
 				this.splitCurrentIndex = 0;
 				this.zoneCompletionMap = {};
+				localStorage.removeItem('splitScreenList');
+				this.zoneinfo = [];
 				this.updatedTime = res.updated_time;
 				// LOAD new layout
 				this.splitScreen = this.deepCopy(newLayout);
@@ -552,13 +573,19 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
 		this.zoneinfo = [];
-		const stored = localStorage.getItem('splitScreenList');
-		this.splitScreenList = stored ? JSON.parse(stored) : this.splitScreenList;
+		// const stored = localStorage.getItem('splitScreenList');
+		// this.splitScreenList = stored ? JSON.parse(stored) : this.splitScreenList;
 		if (!this.splitScreenList?.length) return;
 
-		this.zoneinfo = this.splitScreenList[this.splitCurrentIndex]?.zonelist || [];
+		const zones = this.splitScreenList[this.splitCurrentIndex]?.zonelist;
+
+		if (!Array.isArray(zones) || zones.length === 0) {
+			console.warn('⚠️ Empty zonelist detected → forcing next slide');
+			this.nextSlideAndShow();
+			return;
+		}
+		this.zoneinfo = zones;
 		console.log('Showing zones:', this.zoneinfo);
-		const layout_time = this.splitScreenList[this.splitCurrentIndex]?.layout_duration ?? 10;
 	}
 
 	private nextSlideAndShow() {

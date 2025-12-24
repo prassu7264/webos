@@ -88,13 +88,15 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 				this.stickyLogoMeasured = true;
 				// console.log("the sticky image width (ONCE):", width);
 			}
-			const wrapperRect = wrapper.getBoundingClientRect();
-			const triggerX = wrapperRect.left + this.stickyLogoWidth;
+			// const wrapperRect = wrapper.getBoundingClientRect();
+			
 
 			triggers.forEach((el) => {
 				const index = Number(el.getAttribute('data-index'));
 				const rect = el.getBoundingClientRect();
 				const wrapperRect = wrapper.getBoundingClientRect();
+				const triggerX = wrapperRect.left + this.stickyLogoWidth;
+				console.log("",triggerX)
 
 				//for left touch url logo change
 				// const hitLeft =
@@ -277,8 +279,8 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			// --- Start animation on next frame for stability ---
 			requestAnimationFrame(() => {
 				this.animationReady = true;
+				this.startLogoTracking();
 				setTimeout(() => {
-					this.startLogoTracking();
 				}, 50);
 			});
 		}, 300);
