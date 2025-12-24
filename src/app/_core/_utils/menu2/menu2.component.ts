@@ -226,5 +226,6 @@ export class Menu2Component {
 
     }
     sessionStorage.setItem("ModeConfiguration", this.isChecked)
+    console.log("onChangeModeConfiguration() from menu 2 comp",this.isChecked)
   }
 }

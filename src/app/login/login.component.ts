@@ -99,7 +99,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		});
 
 		video.addEventListener("ended", () => {
-			console.log("Video ended");
+			// console.log("Video ended");
 			setTimeout(() => {
 				this.isVideoPlayed = true;
 				sessionStorage.setItem("isVideoPlayed", "true");

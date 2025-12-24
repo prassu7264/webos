@@ -318,7 +318,13 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		this.isPendriveModePlaying = true;
 		console.log('✅ Pendrive detected — loading IQ folder...');
 		try {
-			const files = await this.fsService.listAllFilesOnStorage(pendrivePath, 'IQ');
+			let list = await this.fsService.listAllFilesOnStorage(pendrivePath, 'IQ');
+			const files = list.sort((a, b) =>
+				a.name.localeCompare(b.name, undefined, {
+					numeric: true,
+					sensitivity: 'base'
+				})
+			);
 			console.log('Files in IQ folder:', files);
 			this.zoneinfo = [{ cols: 1, height: 0, id: 0, ismute: 'true', media_list: files, rows: 1, width: 0, x: 0, y: 0, }];
 			this.dialog.closeAll();

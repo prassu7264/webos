@@ -36,7 +36,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   openInstallDialog(): void {
     if (this.dialogRef) {
       // If the dialog is already open, return early to prevent reopening
-      console.log('Dialog is already open!');
+      // console.log('Dialog is already open!');
       return;
     }
     this.dialogRef = this.dialog.open(this.deviceSettings, {
@@ -45,7 +45,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     this.dialogRef.afterClosed().subscribe((result: any) => {
-      console.log('Dialog closed with result:', result);
+      // console.log('Dialog closed with result:', result);
       // Handle the result here if necessary
       this.dialogRef = null;
     });
@@ -54,14 +54,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent) {
-    console.log('Key pressed, keyCode:', event.keyCode);
+    // console.log('Key pressed, keyCode:', event.keyCode);
 
     switch (event.keyCode) {
       case 13: // Enter / OK
         const now = Date.now();
         const delta = now - this.lastEnterPressTime;
         this.lastEnterPressTime = now;
-        console.log("Enter key pressedffff");
+        // console.log("Enter key pressedffff");
         if (delta < 2200) {
           this.isPendrive = sessionStorage.getItem("ModeConfiguration") === "true"
           // if (sessionStorage.getItem("device")) {
@@ -88,14 +88,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   exitApp() {
     try {
       if (typeof window !== "undefined" && (window as any).webOS?.platformBack) {
-        console.log("Exiting via webOS.platformBack()");
+        // console.log("Exiting via webOS.platformBack()");
         (window as any).webOS.platformBack();
         return;
       }
 
 
       if (this.dialogRef) {
-        console.log('Dialog is already open!');
+        // console.log('Dialog is already open!');
         return;
       }
       this.dialogRef = this.dialog.open(this.exitconfirm, {
@@ -103,7 +103,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       });
 
       this.dialogRef.afterClosed().subscribe((result: any) => {
-        console.log('Dialog closed with result:', result);
+        // console.log('Dialog closed with result:', result);
         if (result) {
           window.close();
         }
@@ -146,7 +146,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (isPopupOpen) {
       if (event.key === 'Escape' || event.keyCode === 461) {
         this.dialog.closeAll();
-        console.log('Popup closed');
+        // console.log('Popup closed');
       } else {
         event.preventDefault();
         event.stopPropagation();

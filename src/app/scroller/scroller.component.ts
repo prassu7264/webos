@@ -96,7 +96,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 				const rect = el.getBoundingClientRect();
 				const wrapperRect = wrapper.getBoundingClientRect();
 				const triggerX = wrapperRect.left + this.stickyLogoWidth;
-				console.log("",triggerX)
+				// console.log("",triggerX)
 
 				//for left touch url logo change
 				// const hitLeft =
@@ -186,7 +186,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 		);
 
 		if (changed) {
-			console.log("Font name changed → Reloading fonts...");
+			// console.log("Font name changed → Reloading fonts...");
 			this.previousFontNames = [...currentFontNames];
 
 			await this.loadScrollerFonts();
@@ -230,7 +230,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 				// console.log("Font loaded first time:", fontKey);
 
 			} catch (err) {
-				console.error("Font load error for:", s.font_folder, err);
+				// console.error("Font load error for:", s.font_folder, err);
 				s.loadedFont = 'sans-serif';
 			}
 		}

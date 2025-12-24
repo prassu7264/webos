@@ -398,7 +398,12 @@ export class FilesystemService {
               directory.listFiles(
                 (files: any[]) => {
                   const fileList = files
-                    .filter((file) => !file.isDirectory) // Filter out directories
+                    .filter((file) => !file.isDirectory).sort((a, b) =>
+                      a.name.localeCompare(b.name, undefined, {
+                        numeric: true,
+                        sensitivity: 'base'
+                      })
+                    )
                     .map((file, index) => ({
                       name: file.name,
                       downloadedUrl: file.toURI(),

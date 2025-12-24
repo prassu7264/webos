@@ -31,7 +31,7 @@ export class ContentPlayerComponent implements OnChanges {
 
 	ngOnChanges(changes: SimpleChanges): void {
 		if (changes['filesData'] && changes['filesData'].currentValue) {
-			console.log("filesData :", this.filesData);
+			// console.log("filesData :", this.filesData);
 			this.loadMediaFiles();
 
 		}
@@ -114,14 +114,14 @@ export class ContentPlayerComponent implements OnChanges {
 		if (!Number(currentFile.Mediafile_id)) {
 			currentFile.Mediafile_id = Date.now();
 		}
-		console.log("Showing file:", this.currentIndex, currentFile);
+		// console.log("Showing file:", this.currentIndex, currentFile);
 		this.activePlayingId = currentFile.Mediafile_id;
 		if (currentFile.type === 'video') {
 			// const videoEl = document.getElementById('media-video') as HTMLVideoElement;
 			const videoEl = this.videoElRef?.nativeElement;
 
 			if (!videoEl) {
-				console.warn('Video element not found');
+				// console.warn('Video element not found');
 				return;
 			}
 			videoEl.removeAttribute('src');
@@ -136,7 +136,7 @@ export class ContentPlayerComponent implements OnChanges {
 				this.videoZoneCompletedOnce = true;
 
 				setTimeout(() => {
-					console.log('✅ video zone completed (time based)');
+					// console.log('✅ video zone completed (time based)');
 					this.zoneComplete.emit(this.zoneId);
 					videoEl.loop = true;
 				}, Number(videoZone.zone_duration) * 1000);
@@ -156,16 +156,16 @@ export class ContentPlayerComponent implements OnChanges {
 				attempts++;
 				try {
 					await videoEl.play();
-					console.log('✅ Video started (attempt ' + attempts + ')');
+					// console.log('✅ Video started (attempt ' + attempts + ')');
 				} catch (err) {
-					console.warn(`⚠️ Autoplay attempt ${attempts} failed`, err);
+					// console.warn(`⚠️ Autoplay attempt ${attempts} failed`, err);
 					if (!videoEl.muted) {
 						videoEl.muted = true;
 						tryPlay();
 					} else if (attempts < maxAttempts) {
 						setTimeout(tryPlay, 2000);
 					} else {
-						console.error('Video cannot play after multiple attempts', err);
+						// console.error('Video cannot play after multiple attempts', err);
 
 					}
 				}
@@ -195,10 +195,10 @@ export class ContentPlayerComponent implements OnChanges {
 								const tizenPath = currentFile.downloadedUrl;
 								this.fsService.deleteFile(tizenPath)
 									.then(() => {
-										console.log("Deleted file:", tizenPath);
+										// console.log("Deleted file:", tizenPath);
 									})
 									.catch(err => {
-										console.error("Failed to delete file:", tizenPath, err);
+										// console.error("Failed to delete file:", tizenPath, err);
 									});
 							}
 							this.nextSlideAndShow();
@@ -206,10 +206,7 @@ export class ContentPlayerComponent implements OnChanges {
 					}
 				}
 
-				console.error('Video failed to load', {
-					src: videoEl.currentSrc || currentFile.Url,
-					error: errorMsg,
-				});
+				// console.error('Video failed to load', {src: videoEl.currentSrc || currentFile.Url,error: errorMsg,});
 
 				this.toastService.error(errorMsg);
 			};
@@ -225,7 +222,7 @@ export class ContentPlayerComponent implements OnChanges {
 				delayMs = (pendriveDelay > 0 ? pendriveDelay : 10) * 1000;
 			}
 
-			console.log('🖼️ Image delay:', delayMs, 'ms', 'Pendrive:', isPendriveMode);
+			// console.log('🖼️ Image delay:', delayMs, 'ms', 'Pendrive:', isPendriveMode);
 
 			this.autoplayTimer = setTimeout(() => {
 				this.nextSlideAndShow();
@@ -265,7 +262,7 @@ export class ContentPlayerComponent implements OnChanges {
 		if (!event.success && event.message) {
 			this.toastService.error(event.message);
 		}
-		console.log(event);
+		// console.log(event);
 
 		this.nextSlideAndShow();
 	}
@@ -300,7 +297,7 @@ export class ContentPlayerComponent implements OnChanges {
 	private async downloadAndSaveFile(media: any) {
 		try {
 			if (this.activePlayingId === media.Mediafile_id) {
-				console.log("⏸️ Skipping downloadedUrl update for currently playing media");
+				// console.log("⏸️ Skipping downloadedUrl update for currently playing media");
 				setTimeout(() => this.downloadAndSaveFile(media), 10000);
 				return;
 			}
@@ -311,7 +308,7 @@ export class ContentPlayerComponent implements OnChanges {
 			}
 			this.saveDownloadedFile(media);
 		} catch (err) {
-			console.error(`Failed to download ${media.Filename}`, err);
+			// console.error(`Failed to download ${media.Filename}`, err);
 		}
 	}
 
