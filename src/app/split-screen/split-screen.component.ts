@@ -690,7 +690,10 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				// ⚠️ Await here so next step runs after copying completes
 
 
-				this.fsService.copyFilesFromUSBToDownloads(usbFiles, this.isClearCopyContent);
+				await this.fsService.copyFilesFromUSBToDownloads(
+					usbFiles,
+					this.isClearCopyContent
+				);
 
 				// ✅ Step 3: Refresh file list and update zone info
 				let files: any = await this.fsService.listAllFilesOnStorage(destination);
