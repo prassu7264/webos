@@ -18,13 +18,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(private dialog: MatDialog,) {
 
   }
-  ngAfterViewInit(): void {
-
-  }
-  ngOnInit() {
-
-
-  }
+  ngAfterViewInit(): void { }
+  ngOnInit() { }
 
   ngOnDestroy(): void {
     if (this.intervalId) {

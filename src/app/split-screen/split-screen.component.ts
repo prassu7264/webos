@@ -579,6 +579,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
 		this.zoneinfo = [];
+		this.zoneCompletionMap = {};
 		// const stored = localStorage.getItem('splitScreenList');
 		// this.splitScreenList = stored ? JSON.parse(stored) : this.splitScreenList;
 		if (!this.splitScreenList?.length) return;
@@ -626,8 +627,8 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		console.log("SplitscreenList from onZoneComplete()", this.splitScreenList)
 
 		if (allCompleted && this.splitScreenList.length > 1 && !this.isPendriveMode) {
-			this.nextSlideAndShow();
 			this.zoneCompletionMap = {}
+			this.nextSlideAndShow();
 		}
 	}
 

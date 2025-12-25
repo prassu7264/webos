@@ -279,11 +279,11 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			// --- Start animation on next frame for stability ---
 			requestAnimationFrame(() => {
 				this.animationReady = true;
-				this.startLogoTracking();
 				setTimeout(() => {
-				}, 50);
+					this.startLogoTracking();
+				}, 20);
 			});
-		}, 300);
+		}, 200);
 	}
 
 	trackById(index: number, item: ScrollerItem) {
