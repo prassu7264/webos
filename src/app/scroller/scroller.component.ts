@@ -7,6 +7,7 @@ export interface ScrollerItem {
 	bgcolor: string;
 	fncolor: string;
 	fnsize: string;
+	logo?: string | null;
 	fontname: string;
 	scrlspeed: number;   // provided duration hint (seconds)
 	direction: string;   // left, right, up, down
@@ -27,19 +28,141 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 	@Input() scrollers: ScrollerItem[] = [];
 	@ViewChild('scrollWrapper') scrollWrapper!: ElementRef;
 	@ViewChild('scrollTrack') scrollTrack!: ElementRef;
+	@ViewChild('logoImg', { static: false }) logoImgRef?: ElementRef<HTMLImageElement>;
 	public baseDuration: number = 20; // default fallback duration
 	animationReady = false;
 	private previousFontNames: string[] = [];
+	stickyLogo: string | null = null;
+	isLogoSticky = false;
+	private rafId: number | null = null;
+	private stickyLogoWidth = 0;
+	stickyFromIndex: number | null = null;
+	private stickyLogoMeasured = false;
+
 
 	ngOnInit() { }
 
 	ngAfterViewInit() {
 		// this.updateScrollSpeed();
+		const track = this.scrollTrack.nativeElement as HTMLElement;
+
+		track.addEventListener('animationiteration', () => {
+			// 🔁 RESET on every loop
+			if (this.scrollers.length && this.scrollers[0].logo) {
+				this.stickyLogo = this.scrollers[0].logo;
+				this.stickyFromIndex = 0;
+			} else {
+				this.stickyLogo = null;
+				this.stickyFromIndex = null;
+			}
+			this.updateLogoOffset();
+		});
 	}
 
 	ngOnChanges(changes: SimpleChanges) {
 		if (changes['scrollers']) {
+
+			//  NEW LOGIC: first scroller logo should be sticky initially
+			if (this.scrollers.length && this.scrollers[0].logo) {
+				this.stickyLogo = this.scrollers[0].logo;
+				this.stickyFromIndex = 0;
+			}
 			this.checkFontChanges();
+		}
+	}
+
+
+	private startLogoTracking() {
+		if (this.rafId) cancelAnimationFrame(this.rafId);
+
+		const wrapper = this.scrollWrapper.nativeElement as HTMLElement;
+		const triggers = Array.from(
+			this.scrollTrack.nativeElement.querySelectorAll('.logo-trigger')
+		) as HTMLElement[];
+
+		const loop = () => {
+			const logoEl = this.logoImgRef?.nativeElement as HTMLImageElement;
+			if (logoEl?.complete && !this.stickyLogoMeasured) {
+				const width = logoEl.offsetWidth;
+				this.stickyLogoWidth = width;
+				this.stickyLogoMeasured = true;
+				// console.log("the sticky image width (ONCE):", width);
+			}
+			// const wrapperRect = wrapper.getBoundingClientRect();
+			
+
+			triggers.forEach((el) => {
+				const index = Number(el.getAttribute('data-index'));
+				const rect = el.getBoundingClientRect();
+				const wrapperRect = wrapper.getBoundingClientRect();
+				const triggerX = wrapperRect.left + this.stickyLogoWidth;
+				// console.log("",triggerX)
+
+				//for left touch url logo change
+				// const hitLeft =
+				// 	rect.left <= wrapperRect.left &&
+				// 	rect.right > wrapperRect.left;
+
+				// if (hitLeft) {
+				// 	this.onScrollerHitLeft(index);
+				// }
+
+				//for Right touch url logo change
+				// const hitRight =
+				// 	rect.left < wrapperRect.right &&
+				// 	rect.right >= wrapperRect.right;
+
+				// if (hitRight) {
+				// 	this.onScrollerHitLeft(index);
+				// }
+
+				//  Trigger when scroller touches sticky logo width
+				if (
+					rect.left <= triggerX &&
+					rect.right > triggerX
+				) {
+					this.onScrollerHitLeft(index);
+				}
+
+			});
+
+			this.rafId = requestAnimationFrame(loop);
+		};
+
+		loop();
+	}
+
+
+
+	private onScrollerHitLeft(index: number) {
+		if (this.stickyFromIndex === index) return;
+
+		const scroller = this.scrollers[index];
+
+		if (scroller.logo) {
+			this.stickyLogo = scroller.logo;
+			this.stickyFromIndex = index;
+			this.stickyLogoMeasured = false;
+			this.updateLogoOffset();
+		} else {
+			this.stickyLogo = null;
+			this.stickyFromIndex = null;
+			this.stickyLogoWidth = 0;
+			this.stickyLogoMeasured = false;
+			this.updateLogoOffset();
+		}
+	}
+
+
+	private updateLogoOffset() {
+		const wrapper = this.scrollWrapper?.nativeElement as HTMLElement;
+		const logoEl = wrapper?.querySelector('.sticky-logo img') as HTMLElement;
+
+		if (logoEl) {
+			const width = logoEl.offsetWidth + 20; // 20px gap
+			wrapper.style.setProperty('--logo-offset', `${width}px`);
+		} else {
+			wrapper.style.setProperty('--logo-offset', '0px');
 		}
 	}
 
@@ -63,7 +186,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 		);
 
 		if (changed) {
-			console.log("Font name changed → Reloading fonts...");
+			// console.log("Font name changed → Reloading fonts...");
 			this.previousFontNames = [...currentFontNames];
 
 			await this.loadScrollerFonts();
@@ -77,8 +200,6 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 		});
 
 	}
-
-
 
 	private async loadScrollerFonts() {
 		if (!this.scrollers || !this.scrollers.length) return;
@@ -109,13 +230,11 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 				// console.log("Font loaded first time:", fontKey);
 
 			} catch (err) {
-				console.error("Font load error for:", s.font_folder, err);
+				// console.error("Font load error for:", s.font_folder, err);
 				s.loadedFont = 'sans-serif';
 			}
 		}
 	}
-
-
 
 	private updateScrollSpeed() {
 		this.animationReady = false;
@@ -129,7 +248,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			const direction = s.direction || 'left';
 
 			// --- DOM measurements ---
-			const wrapperWidth = wrapper.offsetWidth;
+			const wrapperWidth = wrapper.offsetWidth - (this.scrollers[0]?.logo ? 60 : 0);
 			const wrapperHeight = wrapper.offsetHeight;
 			const trackWidth = track.scrollWidth;
 			const trackHeight = track.scrollHeight;
@@ -160,8 +279,15 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			// --- Start animation on next frame for stability ---
 			requestAnimationFrame(() => {
 				this.animationReady = true;
+				setTimeout(() => {
+					this.startLogoTracking();
+				}, 20);
 			});
-		}, 300);
+		}, 200);
+	}
+
+	trackById(index: number, item: ScrollerItem) {
+		return item.id;
 	}
 
 
@@ -178,5 +304,9 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 		return `${vertical}px ${horizontal}px`;
 	}
 
-	ngOnDestroy() { }
+	ngOnDestroy() {
+		if (this.rafId) {
+			cancelAnimationFrame(this.rafId);
+		}
+	}
 }
