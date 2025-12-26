@@ -1,0 +1,125 @@
+--make .wgt file production:
+    # From project root
+    ng build --output-path=./tizen/www --configuration production
+
+    # Go to tizen project
+    cd tizen
+
+    # Build web
+    tizen build-web
+
+    # Package web app (THIS IS FINAL)
+    tizen package -t wgt --sign Demo_Project
+-------------------------------------------------------------------------------------------------------------
+
+--Client prerequisites:
+
+    Developer Mode ON (Apps → 1-2-3-4-5)
+
+    Laptop + TV on same Wi-Fi
+
+    Tizen CLI installed
+
+-----------------------------------------------------------------------------------------------------------------
+
+🔌 Client connects to TV:
+
+    sdb connect <TV_IP>
+
+    sdb devices
+
+-0-------------------------------------------------------------------------------------------------------------------
+
+📦 Client installs app:
+Place IQ WORLD PLAYER.wgt in any folder, then:
+
+    tizen install -n "IQ WORLD PLAYER.wgt"
+
+---------------------------------------------------------------------------------------------------------------------------
+🪟 WINDOWS Tizen CLI Installation
+1️⃣ Download :
+
+    Click:
+
+        tizen-studio_x.x.x_windows.exe
+
+
+2️⃣ Install :
+
+    Double-click the .exe
+
+    When installer opens:
+
+        ✅ Select CLI Tools
+
+        ❌ Uncheck Emulator
+
+        ❌ Uncheck Samples
+
+    Install path (default is fine):
+
+        C:\tizen-studio
+
+
+Click Install → wait → Finish.
+
+
+3️⃣ OPEN COMMAND PROMPT (THIS IS IMPORTANT) :
+
+    Press Windows + R
+
+    Type:
+
+        cmd
+
+    Press Enter
+
+    This black window = where all commands run.
+
+
+4️⃣ VERIFY INSTALLATION :
+
+    In Command Prompt, type:
+
+        tizen version
+
+
+    ✅ Expected output:
+
+    Tizen CLI x.x.x
+
+
+🎉 Tizen CLI installed successfully
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+🐧 LINUX Tizen CLI Installation(Ubuntu)
+1️⃣ Download : 
+
+    Click:
+
+        tizen-studio_x.x.x_linux.bin
+
+2️⃣ Install :
+
+    Open Terminal and go to Downloads:
+
+        cd ~/Downloads
+        chmod +x tizen-studio_*.bin
+        ./tizen-studio_*.bin
+
+
+    Installer opens:
+
+    ✅ Select CLI Tools only
+
+    ❌ Skip Emulator
+
+3️⃣ ADD TO PATH :
+
+    export PATH=$PATH:$HOME/tizen-studio/tools
+
+4️⃣ VERIFY :
+
+    tizen version
