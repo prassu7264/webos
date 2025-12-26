@@ -11,6 +11,10 @@ ares-inspect --device tv --reload com.smarttv.launchapp
 
 ng build --output-path=./iqtizen/www --configuration production
 
+// For WebOS Build Commands:
+ng build --output-path=./iqwebos-webos/www --configuration production
+ares-package ./iqwebos-webos --no-minify
+
 
 GIT PULL Commands:
 
@@ -23,3 +27,14 @@ GIT PUSH Commands:
     $  git add .
     $  git commit -m ""
     $  git push origin surya
+
+
+GIT MERGE Commands:
+    $  git add .
+    $  git commit -m ""
+    $  git remote add origin <Remote git URL>
+    $  git fetch origin -- for fetching all remote branches
+    $  git checkout -b <BranchName> origin/<branchName> -- for first time initializing which branch need from remote Repository 
+    $  git switch <branchName> -- for Switching branch and Switch branch which remote branch you need to commit
+    $  git reset --hard <commited branchName>
+    $  git push origin <Remote Branchname> --force
