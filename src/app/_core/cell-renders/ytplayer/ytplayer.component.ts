@@ -124,7 +124,7 @@ export class YtplayerComponent
         try { if (target && target.unMute) target.unMute(); } catch (e) { }
       }, 1400);
     } catch (e) {
-      console.warn("YT ready handler error:", e);
+      console.log("YT ready handler error:", e);
     }
   }
 
@@ -172,7 +172,7 @@ export class YtplayerComponent
         this.player.destroy();
       }
     } catch (err) {
-      console.warn("Error while destroying YT player:", err);
+      console.log("Error while destroying YT player:", err);
     } finally {
       this.player = null;
 

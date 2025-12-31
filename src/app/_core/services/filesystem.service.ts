@@ -50,7 +50,7 @@ export class FilesystemService {
                 resolve(path);
               },
               onfailed: (id: number, error: any) => {
-                console.warn("Download failed, returning original URL:", error.name, error.message);
+                console.log("Download failed, returning original URL:", error.name, error.message);
                 this.activeDownloads.delete(key);
                 resolve(url);
               },
@@ -58,7 +58,7 @@ export class FilesystemService {
 
             tizen.download.start(request, listener);
           } catch (error: any) {
-            console.warn("Failed to start download, returning original URL:", error.message);
+            console.log("Failed to start download, returning original URL:", error.message);
             this.activeDownloads.delete(key);
             resolve(url);
           }
@@ -77,7 +77,7 @@ export class FilesystemService {
               console.log(`No file at ${fullPath}, checking storage...`);
               checkStorageAndDownload();
             } else {
-              console.warn("Resolve failed, returning original URL:", error.message);
+              console.log("Resolve failed, returning original URL:", error.message);
               this.activeDownloads.delete(key);
               resolve(url);
             }
@@ -90,7 +90,7 @@ export class FilesystemService {
           tizen.systeminfo.getPropertyValue("STORAGE", (storages: any) => {
             const storage = storages.units?.find((u: any) => u.type === "INTERNAL") || storages.units?.[0];
             if (!storage) {
-              console.warn("⚠️ No storage found, returning original URL.");
+              console.log("⚠️ No storage found, returning original URL.");
               this.activeDownloads.delete(key);
               resolve(url);
               return;
@@ -103,11 +103,11 @@ export class FilesystemService {
                 const totalSize = parseInt(res.headers.get("content-length") || "0", 10);
 
                 if (totalSize > 0 && totalSize + MIN_FREE_SPACE > available) {
-                  console.warn("Not enough storage, returning original URL.");
+                  console.log("Not enough storage, returning original URL.");
                   this.activeDownloads.delete(key);
                   resolve(url);
                 } else if (totalSize === 0 && available < MIN_FREE_SPACE) {
-                  console.warn("Low storage, returning original URL.");
+                  console.log("Low storage, returning original URL.");
                   this.activeDownloads.delete(key);
                   resolve(url);
                 } else {
@@ -117,11 +117,11 @@ export class FilesystemService {
               })
               .catch(() => {
                 if (available < MIN_FREE_SPACE) {
-                  console.warn("Low storage (HEAD failed), returning original URL.");
+                  console.log("Low storage (HEAD failed), returning original URL.");
                   this.activeDownloads.delete(key);
                   resolve(url);
                 } else {
-                  console.warn("Could not fetch content-length, starting download anyway.");
+                  console.log("Could not fetch content-length, starting download anyway.");
                   startDownload();
                 }
               });
@@ -143,7 +143,7 @@ export class FilesystemService {
 
     return new Promise<void>((resolve, reject) => {
       if (this.detectPlatform() !== 'tizen') {
-        console.warn('deleteFile called on non-Tizen platform:', fileUrl);
+        console.log('deleteFile called on non-Tizen platform:', fileUrl);
         resolve();
         return;
       }
@@ -164,7 +164,7 @@ export class FilesystemService {
               }
             );
           } else {
-            console.warn('Not a file:', fileUrl);
+            console.log('Not a file:', fileUrl);
             resolve();
           }
         },
@@ -180,7 +180,7 @@ export class FilesystemService {
   deleteAllFilesWithFolder(virtualRoot: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       if (this.detectPlatform() !== 'tizen') {
-        console.warn('deleteFiles called on non-Tizen platform:', virtualRoot);
+        console.log('deleteFiles called on non-Tizen platform:', virtualRoot);
         resolve();
         return;
       }
@@ -226,7 +226,7 @@ export class FilesystemService {
   deleteAllFiles(virtualRoot: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       if (this.detectPlatform() !== 'tizen') {
-        console.warn('deleteFiles called on non-Tizen platform:', virtualRoot);
+        console.log('deleteFiles called on non-Tizen platform:', virtualRoot);
         resolve();
         return;
       }
@@ -275,7 +275,7 @@ export class FilesystemService {
   listDownloadedImages(virtualRoot = 'downloads'): Promise<{ name: string; uri: string }[]> {
     return new Promise((resolve, reject) => {
       if (this.detectPlatform() !== 'tizen') {
-        console.warn('⚠️ listDownloadedImages called on non-Tizen platform:', virtualRoot);
+        console.log('⚠️ listDownloadedImages called on non-Tizen platform:', virtualRoot);
         resolve([]);
         return;
       }
@@ -348,7 +348,7 @@ export class FilesystemService {
   getStorages(): Promise<any> {
     return new Promise((resolve, reject) => {
       if (this.detectPlatform() !== 'tizen') {
-        console.warn("Platform is not Tizen");
+        console.log("Platform is not Tizen");
 
         return;
       }
@@ -376,7 +376,7 @@ export class FilesystemService {
   }
   listAllFilesOnStorage(storageLabel: string, directoryPath: string = ''): Promise<Array<{ name: string; downloadedUrl: string; Url: string, id: number }>> {
     if (this.detectPlatform() !== 'tizen') {
-      console.warn('Filesystem access is only available on the Tizen platform.');
+      console.log('Filesystem access is only available on the Tizen platform.');
       return Promise.resolve([]);
     }
 
@@ -436,7 +436,7 @@ export class FilesystemService {
   }
   countPendrivesWithIQFolder(folderName: string = "IQ"): Promise<UsbInfo> {
     if (this.detectPlatform() !== 'tizen') {
-      console.warn('Filesystem access is only available on the Tizen platform.');
+      console.log('Filesystem access is only available on the Tizen platform.');
       return Promise.resolve({ totalPendrives: 0, pendrivesWithIQ: [] });
     }
 
@@ -484,7 +484,7 @@ export class FilesystemService {
           if (error.name === 'NotFoundError') {
             resolve(false);
           } else {
-            console.warn(`Error resolving path '${storageLabel}/${folderName}':`, error.message);
+            console.log(`Error resolving path '${storageLabel}/${folderName}':`, error.message);
             resolve(false);
           }
         },
@@ -495,7 +495,7 @@ export class FilesystemService {
 
   listAllSubfolders(path: string, recursive: boolean = true): Promise<string[]> {
     if (this.detectPlatform() !== 'tizen') {
-      console.warn('Filesystem access is only available on the Tizen platform.');
+      console.log('Filesystem access is only available on the Tizen platform.');
       return Promise.resolve([]);
     }
 
@@ -559,7 +559,7 @@ export class FilesystemService {
         tizen.systeminfo.getPropertyValue("STORAGE", (storages: any) => {
           const storage = storages.units?.find((u: any) => u.type === "INTERNAL") || storages.units?.[0];
           if (!storage) {
-            console.warn("No storage found.");
+            console.log("No storage found.");
             resolve(false);
             return;
           }
@@ -579,7 +579,7 @@ export class FilesystemService {
   copyDirectory(sourceDir: string, destinationDir: string, overwrite: boolean): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.detectPlatform() !== 'tizen') {
-        console.warn('Filesystem access is only available on the Tizen platform.');
+        console.log('Filesystem access is only available on the Tizen platform.');
         return reject('Tizen filesystem API is not available.');
       }
       console.log("sourceDir : ", sourceDir);
@@ -716,7 +716,7 @@ export class FilesystemService {
             },
             (error: any) => {
               if (error.name === 'NotFoundError') {
-                console.warn('Folder not found — will create new one.');
+                console.log('Folder not found — will create new one.');
                 createFolder();
               } else {
                 console.error('Error deleting folder:', error.message);
@@ -840,7 +840,7 @@ export class FilesystemService {
         },
         (error: any) => {
           if (error.name === 'NotFoundError') {
-            console.warn('Folder not found — will create fresh folder.');
+            console.log('Folder not found — will create fresh folder.');
             createFolder();
           } else {
             console.error('Error deleting folder:', error.message);

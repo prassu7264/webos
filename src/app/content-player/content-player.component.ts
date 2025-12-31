@@ -4,6 +4,8 @@ import { ToastService } from '../_core/services/toast.service';
 import { YtplayerComponent } from '../_core/cell-renders/ytplayer/ytplayer.component';
 import { FilesystemService } from '../_core/services/filesystem.service';
 import { ConnectionService, ConnectionState } from 'ng-connection-service';
+import { LoggerService } from '../_core/services/logger.service';
+
 
 @Component({
 	selector: 'app-content-player',
@@ -27,35 +29,61 @@ export class ContentPlayerComponent implements OnChanges {
 	private activePlayingId?: number;
 	private videoZoneCompletedOnce = false;
 	forSplitscreenVideoloop = false;
-	constructor(private toastService: ToastService, private fsService: FilesystemService, private connectionService: ConnectionService) { }
+	constructor(private toastService: ToastService, private fsService: FilesystemService, private connectionService: ConnectionService, private logger: LoggerService) {
+		this.logger.info('ContentPlayer.constructor', 'Component created');
+	}
 
 	ngOnChanges(changes: SimpleChanges): void {
 		if (changes['filesData'] && changes['filesData'].currentValue) {
-			// console.log("filesData :", this.filesData);
+			this.logger.info('ngOnChanges', 'filesData changed', {
+				length: this.filesData?.length,
+				zoneId: this.zoneId
+			});
 			this.loadMediaFiles();
 
 		}
 	}
 
 	ngOnInit(): void {
+		this.logger.info('ngOnInit', 'ContentPlayer initialized', {
+			zoneId: this.zoneId
+		});
 		this.loadMediaFiles();
 		this.connectionService.monitor().pipe(
 			tap((newState: ConnectionState) => {
 				const currentFile = this.filesData[this.currentIndex];
 				this.isOnline = newState.hasNetworkConnection;
+				this.logger.log('Connection', 'Network state changed', {
+					online: this.isOnline,
+					zoneId: this.zoneId
+				});
 			})
 		).subscribe();
 	}
 
 	ngOnDestroy(): void {
+		this.logger.warn('ngOnDestroy', 'ContentPlayer destroyed', {
+			zoneId: this.zoneId
+		});
 		this.intervalSub?.unsubscribe();
 		clearTimeout(this.autoplayTimer);
-		this.filesData= [];
+		this.filesData = [];
 	}
 
 	private loadMediaFiles() {
+		this.logger.info('loadMediaFiles', 'Preparing media list', {
+			originalCount: this.filesData?.length,
+			zoneId: this.zoneId
+		});
+
 		this.filesData = this.prepareFiles(this.filesData);
 		this.currentIndex = 0;
+
+		this.logger.info('loadMediaFiles', 'Filtered media list', {
+			preparedCount: this.filesData.length,
+			types: this.filesData.map(f => f.type)
+		});
+
 		this.resetPlayerForYouTube();
 		setTimeout(() => {
 			this.showCurrentSlide();
@@ -110,19 +138,34 @@ export class ContentPlayerComponent implements OnChanges {
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
 		const currentFile = this.filesData[this.currentIndex];
-		if (!currentFile) return;
+		if (!currentFile) {
+			this.logger.warn('showCurrentSlide', 'No media found', {
+				index: this.currentIndex,
+				zoneId: this.zoneId
+			});
+
+			return;
+		}
 
 		if (!Number(currentFile.Mediafile_id)) {
 			currentFile.Mediafile_id = Date.now();
 		}
 		console.log("Showing file:", this.currentIndex, currentFile);
 		this.activePlayingId = currentFile.Mediafile_id;
+
+		this.logger.info('showCurrentSlide', 'Playing media', {
+			index: this.currentIndex,
+			type: currentFile.type,
+			mediaId: currentFile.Mediafile_id,
+			zoneId: this.zoneId
+		});
+
 		if (currentFile.type === 'video') {
 			// const videoEl = document.getElementById('media-video') as HTMLVideoElement;
 			const videoEl = this.videoElRef?.nativeElement;
 
 			if (!videoEl) {
-				console.warn('Video element not found');
+				this.logger.error('Video', 'Video element not found', this.zoneId);
 				return;
 			}
 			videoEl.removeAttribute('src');
@@ -146,6 +189,10 @@ export class ContentPlayerComponent implements OnChanges {
 
 			// videoEl.load();
 			videoEl.onended = () => {
+				this.logger.info('Video', 'Video ended', {
+					mediaId: currentFile.Mediafile_id,
+					zoneId: this.zoneId
+				});
 				this.nextSlideAndShow();
 				videoEl.onended = null;
 			};
@@ -159,7 +206,7 @@ export class ContentPlayerComponent implements OnChanges {
 					await videoEl.play();
 					console.log('✅ Video started (attempt ' + attempts + ')');
 				} catch (err) {
-					console.warn(`⚠️ Autoplay attempt ${attempts} failed`, err);
+					console.log(`⚠️ Autoplay attempt ${attempts} failed`, err);
 					if (!videoEl.muted) {
 						videoEl.muted = true;
 						tryPlay();
@@ -177,6 +224,13 @@ export class ContentPlayerComponent implements OnChanges {
 
 			videoEl.onerror = () => {
 				const mediaError = videoEl.error;
+
+				this.logger.error('Video', 'Video playback failed', {
+					src: videoEl.currentSrc || currentFile.Url,
+					errorCode: mediaError?.code,
+					zoneId: this.zoneId
+				});
+
 				let errorMsg = 'Unknown video error';
 				if (mediaError) {
 					switch (mediaError.code) {
@@ -207,16 +261,21 @@ export class ContentPlayerComponent implements OnChanges {
 					}
 				}
 
-				console.error('Video failed to load', {src: videoEl.currentSrc || currentFile.Url,error: errorMsg,});
+				console.error('Video failed to load', { src: videoEl.currentSrc || currentFile.Url, error: errorMsg, });
 
 				this.toastService.error(errorMsg);
 			};
 		}
 		else if (currentFile.type === 'image') {
+			let delayMs = 10000; // default content-player behavior
+
+			this.logger.info('Image', 'Image displayed', {
+				delay: delayMs,
+				zoneId: this.zoneId
+			});
 
 			const isPendriveMode = sessionStorage.getItem('ModeConfiguration') === 'true';
 
-			let delayMs = 10000; // default content-player behavior
 
 			if (isPendriveMode) {
 				const pendriveDelay = Number(localStorage.getItem('imageDelay'));
@@ -229,11 +288,19 @@ export class ContentPlayerComponent implements OnChanges {
 				this.nextSlideAndShow();
 			}, delayMs);
 		} else if (currentFile.type === 'youtube') {
+			this.logger.info('YouTube', 'YouTube media selected', {
+				online: this.isOnline,
+				zoneId: this.zoneId
+			});
+
 			if (!this.isOnline) {
 				this.nextSlideAndShow();
 			}
 			this.resetPlayerForYouTubeForCurrentIndex();
 		} else if (currentFile.type === 'pdf') {
+			this.logger.info('PDF', 'PDF displayed', {
+				zoneId: this.zoneId
+			});
 			//Nothing to change here
 		} else {
 			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
@@ -298,14 +365,21 @@ export class ContentPlayerComponent implements OnChanges {
 	private async downloadAndSaveFile(media: any) {
 		try {
 			if (this.activePlayingId === media.Mediafile_id) {
-				console.log("⏸️ Skipping downloadedUrl update for currently playing media");
+				this.logger.warn('Download', 'Skipping active media download', {
+					mediaId: media.Mediafile_id
+				});
 				setTimeout(() => this.downloadAndSaveFile(media), 10000);
 				return;
 			}
+
+
+			this.logger.info('Download', 'Downloading media', {
+				file: media.Filename
+			});
+
 			const result = await this.fsService.downloadFile(media.Url, 'downloads', media.Filename);
 			if (result && !result.startsWith("https://")) {
-				media.downloadedUrl = result.startsWith("file://") ? result
-					: "file://" + result;
+				media.downloadedUrl = result.startsWith("file://") ? result	: "file://" + result;
 			}
 			this.saveDownloadedFile(media);
 		} catch (err) {

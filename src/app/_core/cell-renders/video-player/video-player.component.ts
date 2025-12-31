@@ -50,7 +50,7 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, OnChanges {
   /** Initialize Tizen AVPlay or fallback to HTML5 */
   private initializePlayer() {
     if (!this.url) {
-      console.warn('⚠️ No video URL provided');
+      console.log('⚠️ No video URL provided');
       return;
     }
 
@@ -137,7 +137,7 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, OnChanges {
           height = is4K ? 2160 : 1080;
           console.log(`📺 Using ${is4K ? '4K' : 'Full HD'} mode`);
         } catch (e) {
-          console.warn('⚠️ Screen info not accessible:', e);
+          console.log('⚠️ Screen info not accessible:', e);
         }
       }
 
@@ -169,7 +169,7 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, OnChanges {
         console.log('🧹 Player stopped and closed');
       }
     } catch (err) {
-      console.warn('⚠️ Stop error:', err);
+      console.log('⚠️ Stop error:', err);
     } finally {
       this.avPlayer = null;
     }
@@ -186,7 +186,7 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, OnChanges {
     setTimeout(() => {
       const videoEl = document.getElementById('media-video') as HTMLVideoElement;
       if (!videoEl) {
-        console.warn('⚠️ Video element not found');
+        console.log('⚠️ Video element not found');
         return;
       }
 
@@ -204,7 +204,7 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, OnChanges {
           await videoEl.play();
           console.log(`✅ Video started (attempt ${attempt})`);
         } catch (err) {
-          console.warn(`⚠️ Autoplay attempt ${attempt} failed`, err);
+          console.log(`⚠️ Autoplay attempt ${attempt} failed`, err);
           if (!videoEl.muted) {
             videoEl.muted = true;
           }

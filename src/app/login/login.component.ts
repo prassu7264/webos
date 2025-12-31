@@ -7,6 +7,8 @@ import { AuthService } from '../_core/services/auth.service';
 import { ToastService } from '../_core/services/toast.service';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
+import { LoggerService } from '../_core/services/logger.service';
+
 
 const BASE_API = clienturl.WEB_URL();
 
@@ -50,10 +52,18 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		private router: Router,
 		private toastService: ToastService,
 		private fb: FormBuilder,
-		private matDialog: MatDialog
-	) { }
+		private matDialog: MatDialog,
+		private logger: LoggerService
+	) {
+		this.logger.info('Login.constructor', 'Login component created');
+	}
 
 	ngOnInit(): void {
+		this.logger.info('ngOnInit', 'Login initialized', {
+			isVideoPlayed: this.isVideoPlayed,
+			version: this.version
+		});
+
 		this.deviceForm = this.fb.group({
 			deviceCode: ['', [Validators.required, Validators.pattern(/^IQW[0-9]+$/i)]]
 		});
@@ -65,7 +75,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.uidSub = this.deviceInfoService.deviceUID$.subscribe(uid => {
 			if (uid) {
 				this.deviceUID = uid;
-				console.log("Device UID:", uid);
+				this.logger.info('DeviceUID', 'Device UID received', uid);
 				this.generateQRCode(uid);
 			}
 		});
@@ -82,24 +92,28 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
 		// ✅ Start device verification loop after video played
 		if (this.isVideoPlayed) {
+			this.logger.info('ngOnInit', 'Video already played → starting device check');
 			this.startDeviceCheckInterval();
 		}
 	}
 
 	ngAfterViewInit(): void {
 		const video: HTMLVideoElement | null = document.getElementById("launchervideo") as HTMLVideoElement;
-		if (!video) return;
+		if (!video) {
+			this.logger.warn('Video', 'Launcher video element not found');
+			return;
+		}
 
 		video.muted = true;
 		video.addEventListener("canplay", () => {
-			console.log("Video ready → autoplaying");
+			this.logger.info('Video', 'Launcher video ready → autoplay');
 			video.play().then(() => {
 				video.muted = false;
-			}).catch(err => console.warn("Autoplay blocked:", err));
+			}).catch(err => console.log("Autoplay blocked:", err));
 		});
 
 		video.addEventListener("ended", () => {
-			// console.log("Video ended");
+			this.logger.info('Video', 'Launcher video ended');
 			setTimeout(() => {
 				this.isVideoPlayed = true;
 				sessionStorage.setItem("isVideoPlayed", "true");
@@ -109,6 +123,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	ngOnDestroy(): void {
+		this.logger.warn('ngOnDestroy', 'Login destroyed');
 		if (this.uidSub) this.uidSub.unsubscribe();
 		if (this.dialogCheckInterval) clearInterval(this.dialogCheckInterval);
 		if (this.checkDeviceAndNavigateInterval) clearInterval(this.checkDeviceAndNavigateInterval);
@@ -117,6 +132,8 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	// 🔁 Start periodic verification
 	private startDeviceCheckInterval(): void {
 		if (this.checkDeviceAndNavigateInterval) return; // prevent duplicates
+
+		this.logger.info('DeviceCheck', 'Starting device verification loop');
 
 		this.checkDeviceAndNavigate(); // first immediate check
 		this.checkDeviceAndNavigateInterval = setInterval(() => {
@@ -129,8 +146,17 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		if (this.isChecking || !this.deviceUID) return;
 		this.isChecking = true;
 
+		this.logger.info('DeviceCheck', 'Verifying device', this.deviceUID);
+
 		this.authService.isExistedDevice(this.deviceUID).subscribe({
 			next: (res: any) => {
+				this.logger.info('DeviceCheck', 'Verification response', {
+					status: res?.status,
+					client_status: res?.client_status,
+					device_status: res?.device_status,
+					expired: res?.isexpired
+				});
+
 				if (res?.status === "success") {
 					const { client_status, device_status, isexpired } = res;
 					sessionStorage.setItem("device", JSON.stringify(res));
@@ -140,6 +166,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 					if (client_status && device_status && !isexpired) {
 						if (!this.isExistedCalled) {
 							this.toastService.success("Device verified successfully!!");
+							this.logger.info('Login', 'Device verified → navigating to player');
 							this.isExistedCalled = true;
 						}
 						clearInterval(this.checkDeviceAndNavigateInterval);
@@ -147,6 +174,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 						this.router.navigate(['/player'], { replaceUrl: true });
 					} else {
 						this.isOpenSwalAlert = true;
+						this.logger.warn('Login', 'Device not approved / expired', res);
 						if (!client_status) {
 							this.type = "Approval Pending...!";
 							this.text = "Please wait until your profile is approved by admin.";
@@ -170,7 +198,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 				}
 			},
 			error: err => {
-				console.error("Device check failed:", err);
+				this.logger.error('DeviceCheck', 'Verification failed', err);
 			},
 			complete: () => {
 				this.isChecking = false;
@@ -182,6 +210,8 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		const qrcodeEl = document.getElementById("qrcode");
 		if (!qrcodeEl) return;
 		qrcodeEl.innerHTML = ""; // clear previous code
+
+		this.logger.info('QRCode', 'Generating QR code', uid);
 
 		new QRCode(qrcodeEl, {
 			text: `${BASE_API}#/iqworld/digitalsignage/device/registrationform/${uid}`,
@@ -198,15 +228,28 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	submit(): void {
 		if (!this.deviceForm.valid || !this.deviceUID) {
+			this.logger.warn('Submit', 'Invalid form submit', {
+				valid: this.deviceForm.valid,
+				uid: this.deviceUID
+			});
+
 			this.toastService.info("Invalid form");
 			return;
 		}
 
 		const code = this.deviceForm.value.deviceCode;
+
+		this.logger.info('Submit', 'Registering device', {
+			code,
+			uid: this.deviceUID
+		});
+
 		this.authService.signup(code, this.deviceUID).subscribe((res: any) => {
 			if (res?.status === 'Failed') {
+				this.logger.error('Submit', 'Signup failed', res);
 				this.toastService.error(res.message);
 			} else {
+				this.logger.info('Submit', 'Signup success', res.message);
 				this.toastService.success(res.message);
 				this.isExistedCalled = false;
 				this.checkDeviceAndNavigate();

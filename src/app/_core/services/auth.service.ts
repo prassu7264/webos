@@ -2,6 +2,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, of, switchMap } from 'rxjs';
 import { clienturl } from 'src/app/api-base';
+import { LoggerService } from '../services/logger.service';
 const TOKEN_KEY = 'auth-token';
 const SERVER_URL: any = clienturl.SERVER_URL();
 const BASE_URL: any = clienturl.BASE_URL()
@@ -13,10 +14,11 @@ const httpOptions = {
 })
 export class AuthService {
   serverInfo = this.getServerDetails();
-  constructor(private http: HttpClient) {
-
+  constructor(private http: HttpClient, private logger: LoggerService) {
+    this.logger.info('AuthService.constructor', 'AuthService initialized');
   }
   getServerDetails() {
+    this.logger.info('getServerDetails', 'Resolving server URL');
     return this.http.get(SERVER_URL, httpOptions).pipe(
       // if success, use server response
       switchMap((res: any) => {
@@ -34,8 +36,11 @@ export class AuthService {
     );
   }
 
-
+  
   isExistedDevice(android_id: any) {
+    this.logger.info('isExistedDevice', 'Checking device existence', {
+      hasAndroidId: !!android_id
+    });
     return this.getServerDetails().pipe(
       switchMap((res: any) => {
         return this.http.get(
@@ -45,6 +50,9 @@ export class AuthService {
     );
   }
   signin(payload: any) {
+    this.logger.info('signin', 'Signin request initiated', {
+      hasUsername: !!payload?.username
+    });
     return this.getServerDetails().pipe(
       switchMap((res: any) => {
         return this.http.post(
@@ -56,6 +64,10 @@ export class AuthService {
     );
   }
   signup(uniqueNumber: any, deviceUID: any) {
+    this.logger.info('signup', 'Device signup initiated', {
+      hasUniqueNumber: !!uniqueNumber,
+      hasDeviceUID: !!deviceUID
+    });
     return this.getServerDetails().pipe(
       switchMap((res: any) => {
         return this.http.get(
@@ -66,6 +78,11 @@ export class AuthService {
   }
 
   getMediafiles(payload: any) {
+    this.logger.info('getMediafiles', 'Fetching media files', {
+      client: payload?.clientusername,
+      device: payload?.username,
+      vertical: payload?.isVertical
+    });
     return this.getServerDetails().pipe(
       switchMap((res: any) => {
         return this.http.get(
@@ -76,6 +93,11 @@ export class AuthService {
   }
   logout(result: any) {
     let deviceUID = sessionStorage.getItem('username') || localStorage.getItem('username');
+    this.logger.warn('logout', 'Logout initiated', {
+      isConfirmed: result?.isConfirmed,
+      isDenied: result?.isDenied,
+      hasDeviceUID: !!deviceUID
+    });
     if (result.isConfirmed) {
       if (deviceUID) {
         localStorage.setItem('username', deviceUID); // keep a copy in localStorage
@@ -106,7 +128,9 @@ export class AuthService {
 
 
   getNetworkInfo(payload: any) {
-
+    this.logger.info('getNetworkInfo', 'Checking network status', {
+      hasAndroidId: !!payload?.androidid
+    });
     return this.getServerDetails().pipe(
       switchMap((res: any) => {
         return this.http.get(
@@ -119,6 +143,7 @@ export class AuthService {
   public saveToken(token: string): void {
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.setItem(TOKEN_KEY, token);
+    this.logger.info('Token', 'Auth token saved');
   }
 
   public getToken(): string | null {

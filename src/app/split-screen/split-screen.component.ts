@@ -10,6 +10,8 @@ import { FilesystemService } from '../_core/services/filesystem.service';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ToastService } from '../_core/services/toast.service';
 import { SplitScreenService } from '../_core/services/split-screen.service';
+import { LoggerService } from '../_core/services/logger.service';
+
 @Injectable({
 	providedIn: 'root',
 })
@@ -71,8 +73,12 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		private toastService: ToastService,
 		private splitService: SplitScreenService,
 		private zone: NgZone,
-		private cdr: ChangeDetectorRef
+		private cdr: ChangeDetectorRef,
+		private logger: LoggerService
 	) {
+
+		this.logger.info('SplitScreen.constructor', 'Component created');
+
 		this.options = {
 			draggable: { enabled: false },
 			resizable: { enabled: false },
@@ -84,18 +90,38 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		};
 
 		this.device = JSON.parse(sessionStorage.getItem('device') || '{}');
-		if (this.device?.username && this.device?.password) this.signin();
+
+		this.logger.info('SplitScreen.constructor', 'Device loaded from session', this.device);
+
+		if (this.device?.username && this.device?.password) {
+			this.logger.info('SplitScreen.constructor', 'Auto signin triggered');
+			this.signin();
+		}
 
 		this.isPendriveMode = sessionStorage.getItem('ModeConfiguration') === 'true';
+
+		this.logger.info('SplitScreen.constructor', 'Pendrive mode initial state', this.isPendriveMode);
 	}
 
 	//  Initialize component
 	ngOnInit(): void {
+
+		this.logger.info('ngOnInit', 'SplitScreen initialized');
+
 		this.isPendriveMode = sessionStorage.getItem('ModeConfiguration') === 'true';
 		this.isClearCopyContent = localStorage.getItem("isClearCopyContent") === 'true';
 		this.isCopyContent = localStorage.getItem("isCopyContent") === 'true';
+
+		this.logger.info('ngOnInit', 'Initial flags', {
+			isPendriveMode: this.isPendriveMode,
+			isClearCopyContent: this.isClearCopyContent,
+			isCopyContent: this.isCopyContent
+		});
+
 		this.checkPendrives();
+
 		if (this.router.url === '/player') {
+			this.logger.warn('ngOnInit', 'Back navigation blocked on /player');
 			history.pushState(null, '', window.location.href);
 			window.addEventListener('popstate', () => {
 				history.pushState(null, '', window.location.href);
@@ -107,6 +133,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 		this.deviceInfoService.deviceUID$.subscribe(uid => {
 			if (uid) {
+				this.logger.info('deviceUID$', 'New Android ID received', uid);
 				localStorage.removeItem('splitScreenList');
 				this.device.androidid = uid;
 				this.loadMediaFiles();
@@ -147,10 +174,13 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	}
 
 	async checkPendrives(): Promise<void> {
+		this.logger.log('checkPendrives', 'Checking pendrive status');
+
 		try {
 			this.isPendriveMode = sessionStorage.getItem('ModeConfiguration') === 'true';
 
 			if (!this.isPendriveMode) {
+				this.logger.info('checkPendrives', 'Pendrive mode OFF');
 				// Pendrive mode is OFF
 				this.stopPendriveMode();
 				this.handlePendriveNotDetected("Pendrive mode off or pendrive removed");
@@ -160,17 +190,23 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			// Check for pendrive with "IQ" folder
 			const fods = await this.fsService.countPendrivesWithIQFolder('IQ');
 			const hasPendriveWithIQ = fods.pendrivesWithIQ.length > 0;
+
+			this.logger.info('checkPendrives', 'Pendrive scan result', {
+				hasPendriveWithIQ,
+				paths: fods.pendrivesWithIQ
+			});
+
 			const destination = '/opt/usr/home/owner/content/Downloads/IQW';
 			const files: any = await this.fsService.listAllFilesOnStorage(destination);
 			if (hasPendriveWithIQ) {
-				// this.pendriveDialogRef?.close();
 				//  Real pendrive found
 				this.hasShownCopiedContentToast = false;
 				this.isPendriveNotDetected = false;
 				this.pendriveCheckCount = 0;
-
 				const pendrivePath = fods.pendrivesWithIQ[0];
 				const fullpath = await this.fsService.getStorageFullPath(pendrivePath);
+
+				this.logger.info('checkPendrives', 'Starting pendrive mode', fullpath);
 				if (!this.isPendriveModePlaying) {
 					this.startPendriveMode(pendrivePath);
 					await this.pendriveSettings(fullpath);
@@ -245,8 +281,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			// this.zoneinfo = [];
 
 		} catch (err: any) {
-			console.error('Error checking pendrives:', err.message);
-			// this.showPendriveDialog("Pendrive not detected & no copied content detected");
+			this.logger.error('checkPendrives', 'Pendrive check failed', err);
 		} finally {
 			this.isCheckingPendrive = false;
 		}
@@ -463,7 +498,16 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 	// ✅ Media Loading & Updating
 	private loadMediaFiles() {
+		this.logger.info('loadMediaFiles', 'Fetching media files');
+
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
+
+			this.logger.info('loadMediaFiles', 'Media response received', {
+				updatedTime: res?.updated_time,
+				layouts: res?.layout_list?.length,
+				scrollers: res?.scrollerList?.length
+			});
+
 			const newLayout = this.deepCopy(res?.layout_list ?? []);
 			const layoutList = res?.layout_list ?? [];
 			this.updatedTime = res.updated_time;
@@ -473,6 +517,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			this.topScrollers = this.scrollers.filter(s => s.type === 'TOP');
 			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			this.splitCurrentIndex = 0;
+			this.logger.info('loadMediaFiles', 'Media initialized, starting playback');
 			this.showCurrentSlide();
 			if (this.canPlayScroller()) {
 				this.startTopScroller();
@@ -482,6 +527,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 			// --- USE REUSABLE FUNCTION ---
 			if (this.checkNoMedia(layoutList)) {
+				this.logger.warn('loadMediaFiles', 'No media available');
 				this.noMediaAvailable = true;
 				this.wasNoMedia = true;
 				return;
@@ -506,7 +552,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			const oldSig = this.getScrollerSignature(this.scrollers);
 			const newSig = this.getScrollerSignature(newScrollers);
 			if (oldSig !== newSig) {
-				console.warn("SCROLLER UPDATED → Full DOM rebuild");
+				console.log("SCROLLER UPDATED → Full DOM rebuild");
 				this.rebuildScroller = false;
 				this.scrollers = newScrollers;
 				this.topScrollers = newScrollers.filter((s: any) => s.type === 'TOP');
@@ -541,7 +587,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				// STOP ANY old loop fully
 				clearTimeout(this.autoplayTimer);
 				this.autoplayTimer = null;
-				console.warn("MEDIA RESTORED → CLEAN RESTART");
+				console.log("MEDIA RESTORED → CLEAN RESTART");
 				this.wasNoMedia = false;
 				// RESET state
 				this.splitCurrentIndex = 0;
@@ -582,17 +628,22 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		this.zoneCompletionMap = {};
 		// const stored = localStorage.getItem('splitScreenList');
 		// this.splitScreenList = stored ? JSON.parse(stored) : this.splitScreenList;
-		if (!this.splitScreenList?.length) return;
+		if (!this.splitScreenList?.length) {
+			this.logger.warn('showCurrentSlide', 'SplitScreen list empty');
+			return;
+		}
 
 		const zones = this.splitScreenList[this.splitCurrentIndex]?.zonelist;
 
 		if (!Array.isArray(zones) || zones.length === 0) {
-			console.warn('⚠️ Empty zonelist detected → forcing next slide');
+			console.log('⚠️ Empty zonelist detected → forcing next slide');
+			this.logger.warn('showCurrentSlide', 'Empty zonelist, moving next');
 			this.nextSlideAndShow();
 			return;
 		}
 		this.zoneinfo = zones;
 		console.log('Showing zones:', this.zoneinfo);
+		this.logger.info('showCurrentSlide', 'Zones displayed', zones.map(z => z.id));
 	}
 
 	private nextSlideAndShow() {
@@ -623,8 +674,11 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	onZoneComplete(zoneId: any) {
 		this.zoneCompletionMap[zoneId] = true;
 		const allCompleted = this.zoneinfo.every(zone => this.zoneCompletionMap[zone.id]);
-		console.log(this.zoneCompletionMap);
-		console.log("SplitscreenList from onZoneComplete()", this.splitScreenList)
+
+		this.logger.log('onZoneComplete', 'Zone completed', {
+			zoneId,
+			allCompleted
+		});
 
 		if (allCompleted && this.splitScreenList.length > 1 && !this.isPendriveMode) {
 			this.zoneCompletionMap = {}
@@ -634,8 +688,10 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 	// ✅ Exit Confirmation
 	exitApp() {
+		this.logger.warn('exitApp', 'Exit requested');
 		try {
 			if (typeof window !== 'undefined' && (window as any).webOS?.platformBack) {
+				this.logger.info('exitApp', 'webOS platformBack used');
 				(window as any).webOS.platformBack();
 				return;
 			}
@@ -645,15 +701,17 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			this.dialogRef = this.dialog.open(this.exitconfirm, { minWidth: '450px' });
 
 			this.dialogRef.afterClosed().subscribe((result: any) => {
+				this.logger.warn('exitApp', 'Exit dialog result', result);
 				if (result) window.close();
 				this.dialogRef = null;
 			});
 		} catch (err) {
-			console.error('❌ exitApp error:', err);
+			this.logger.error('exitApp', 'Exit failed', err);
 		}
 	}
 	// ✅ Cleanup
 	ngOnDestroy(): void {
+		this.logger.warn('ngOnDestroy', 'SplitScreen destroyed');
 		this.intervalSub?.unsubscribe();
 		clearTimeout(this.autoplayTimer);
 		this.subscription.unsubscribe();

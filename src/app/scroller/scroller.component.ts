@@ -1,5 +1,7 @@
 import { Component, Input, OnInit, OnDestroy, AfterViewInit, OnChanges, SimpleChanges, ElementRef, ViewChild } from '@angular/core';
 import { loadFontDynamically } from '../utils/font-loader';
+import { LoggerService } from '../_core/services/logger.service';
+
 
 export interface ScrollerItem {
 	id: number;
@@ -39,14 +41,25 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 	stickyFromIndex: number | null = null;
 	private stickyLogoMeasured = false;
 
+	constructor(private logger: LoggerService) {
+		this.logger.info('Scroller.constructor', 'Scroller component created');
+	}
 
-	ngOnInit() { }
+	ngOnInit() {
+		this.logger.info('ngOnInit', 'Scroller initialized', {
+			count: this.scrollers?.length
+		});
+
+	}
 
 	ngAfterViewInit() {
-		// this.updateScrollSpeed();
+		this.logger.info('ngAfterViewInit', 'Scroller view ready');
+
 		const track = this.scrollTrack.nativeElement as HTMLElement;
 
 		track.addEventListener('animationiteration', () => {
+			this.logger.log('animationiteration', 'Scroller loop completed');
+
 			// 🔁 RESET on every loop
 			if (this.scrollers.length && this.scrollers[0].logo) {
 				this.stickyLogo = this.scrollers[0].logo;
@@ -62,10 +75,21 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 	ngOnChanges(changes: SimpleChanges) {
 		if (changes['scrollers']) {
 
+			this.logger.info('ngOnChanges', 'Scroller data changed', {
+				count: this.scrollers.length,
+				type: this.scrollers[0]?.type,
+				direction: this.scrollers[0]?.direction
+			});
+
 			//  NEW LOGIC: first scroller logo should be sticky initially
 			if (this.scrollers.length && this.scrollers[0].logo) {
 				this.stickyLogo = this.scrollers[0].logo;
 				this.stickyFromIndex = 0;
+
+				this.logger.info('StickyLogo', 'Initial sticky logo set', {
+					index: 0,
+					logo: this.stickyLogo
+				});
 			}
 			this.checkFontChanges();
 		}
@@ -89,7 +113,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 				// console.log("the sticky image width (ONCE):", width);
 			}
 			// const wrapperRect = wrapper.getBoundingClientRect();
-			
+
 
 			triggers.forEach((el) => {
 				const index = Number(el.getAttribute('data-index'));
@@ -139,6 +163,12 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 
 		const scroller = this.scrollers[index];
 
+		this.logger.info('StickyLogo', 'Sticky logo changed', {
+			from: this.stickyFromIndex,
+			to: index,
+			hasLogo: !!scroller.logo
+		});
+
 		if (scroller.logo) {
 			this.stickyLogo = scroller.logo;
 			this.stickyFromIndex = index;
@@ -174,6 +204,8 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 
 		// FIRST TIME → always load fonts
 		if (this.previousFontNames.length === 0) {
+			this.logger.info('Font', 'Initial font load', currentFontNames);
+
 			this.previousFontNames = [...currentFontNames];
 			await this.loadScrollerFonts();
 			this.updateScrollSpeed();
@@ -186,13 +218,19 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 		);
 
 		if (changed) {
-			// console.log("Font name changed → Reloading fonts...");
+			this.logger.warn('Font', 'Font change detected → reload', {
+				old: this.previousFontNames,
+				new: currentFontNames
+			});
+
 			this.previousFontNames = [...currentFontNames];
 
 			await this.loadScrollerFonts();
 			this.updateScrollSpeed();
 			return;
 		}
+
+		this.logger.log('Font', 'Fonts unchanged → reapply only');
 
 		// ✔ FONT NOT CHANGED → Still re-apply loadedFont to trigger UI refresh
 		this.scrollers.forEach(s => {
@@ -210,12 +248,14 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			//  Already loaded → skip
 			if (loadedFontCache.has(fontKey)) {
 				s.loadedFont = s.font_folder;
+				this.logger.log('Font', 'Font already cached', fontKey);
 				continue;
 			}
 
 			//  Invalid → skip
 			if (!s.fontname || !s.font_folder) {
 				s.loadedFont = 'sans-serif';
+				this.logger.warn('Font', 'Invalid font data, fallback used');
 				continue;
 			}
 
@@ -227,10 +267,14 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 				// Mark as loaded
 				loadedFontCache.add(fontKey);
 
-				// console.log("Font loaded first time:", fontKey);
+				this.logger.info('Font', 'Font loaded successfully', fontKey);
 
 			} catch (err) {
-				// console.error("Font load error for:", s.font_folder, err);
+				this.logger.error('Font', 'Font load failed', {
+					font: fontKey,
+					error: err
+				});
+
 				s.loadedFont = 'sans-serif';
 			}
 		}
@@ -246,6 +290,12 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 
 			const s = this.scrollers[0];
 			const direction = s.direction || 'left';
+
+			this.logger.info('ScrollSpeed', 'Calculating scroll speed', {
+				direction,
+				speed: s.scrlspeed,
+				logo: !!s.logo
+			});
 
 			// --- DOM measurements ---
 			const wrapperWidth = wrapper.offsetWidth - (this.scrollers[0]?.logo ? 60 : 0);
@@ -279,6 +329,8 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			// --- Start animation on next frame for stability ---
 			requestAnimationFrame(() => {
 				this.animationReady = true;
+				this.logger.info('ScrollSpeed', 'Animation started');
+
 				setTimeout(() => {
 					this.startLogoTracking();
 				}, 20);
@@ -305,6 +357,8 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 	}
 
 	ngOnDestroy() {
+		this.logger.warn('ngOnDestroy', 'Scroller destroyed');
+
 		if (this.rafId) {
 			cancelAnimationFrame(this.rafId);
 		}

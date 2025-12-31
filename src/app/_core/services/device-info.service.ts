@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { LoggerService } from '../services/logger.service';
 
 @Injectable({
   providedIn: 'root'
@@ -9,19 +10,26 @@ export class DeviceInfoService {
   private deviceUIDSubject = new BehaviorSubject<string | null>(null);
   deviceUID$ = this.deviceUIDSubject.asObservable();
 
-  constructor() {
+  constructor(private logger: LoggerService) {
+    this.logger.info('DeviceInfoService.constructor', 'DeviceInfoService initialized');
     this.initDeviceUID();
   }
 
   async initDeviceUID(): Promise<string> {
     // return existing UID if already initialized
     const currentUID = this.deviceUIDSubject.getValue();
-    if (currentUID) return currentUID;
+    if (currentUID) {
+      this.logger.log('initDeviceUID', 'Using cached device UID');
+      return currentUID;
+    }
+
+    this.logger.info('initDeviceUID', 'Resolving device UID');
 
     let uid: string = "";
 
     // ✅ webOS (PalmServiceBridge)
     if (typeof window !== "undefined" && (window as any).PalmServiceBridge) {
+      this.logger.info('initDeviceUID', 'Platform detected: webOS');
       uid = await new Promise((resolve) => {
         try {
           const bridge = new (window as any).PalmServiceBridge();
@@ -39,7 +47,7 @@ export class DeviceInfoService {
                 console.log("Model:", res.modelName, "FW:", res.firmwareVersion);
                 resolve(res.serialNumber);
               } else {
-                console.warn("⚠️ webOS serial not found, using deviceId/fallback");
+                console.log("⚠️ webOS serial not found, using deviceId/fallback");
                 resolve(res.deviceId || crypto.randomUUID());
               }
             } catch (err) {
@@ -57,22 +65,34 @@ export class DeviceInfoService {
 
       // ✅ Samsung Tizen (webapis.productinfo)
     } else if (typeof window !== "undefined" && (window as any).webapis?.productinfo) {
+      this.logger.info('initDeviceUID', 'Platform detected: Tizen');
       try {
         const productInfo = (window as any).webapis.productinfo;
         console.log(productInfo);
         uid = productInfo.getDuid();
+        this.logger.info('initDeviceUID', 'Tizen DUID resolved');
       } catch (error: any) {
-        console.error("❌ Tizen webapis error:", error?.message || error);
+        this.logger.error(
+          'initDeviceUID',
+          'Tizen getDuid failed',
+          error?.message || error
+        );
         uid = crypto.randomUUID();
       }
 
     } else {
+      this.logger.warn('initDeviceUID', 'Platform unknown — using fallback UID');
       uid = localStorage.getItem("fallback_duid") || crypto.randomUUID();
       localStorage.setItem("fallback_duid", uid);
       console.log("⚠️ Using fallback UID:", uid);
     }
 
     this.deviceUIDSubject.next(uid);
+
+    this.logger.info('initDeviceUID', 'Device UID resolved', {
+      source: uid ? 'resolved' : 'unknown'
+    });
+
     return uid;
   }
 

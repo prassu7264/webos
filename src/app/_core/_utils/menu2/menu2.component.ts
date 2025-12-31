@@ -5,6 +5,8 @@ import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { FilesystemService } from '../../services/filesystem.service';
 import { NavigationEnd, Router } from '@angular/router';
+import { LoggerService } from '../../services/logger.service';
+
 
 @Component({
   selector: 'app-menu2',
@@ -35,13 +37,13 @@ export class Menu2Component {
       icon: './assets/images/info.png',
       type: "devcieinfo"
     },
-    // {
-    //   id: 2,
-    //   title: 'User Manual',
-    //   description: 'Access the user manual for instructions on how to operate and troubleshoot the device.',
-    //   icon: './assets/images/information.png',
-    //   type: "userManual"
-    // },
+    {
+      id: 2,
+      title: 'User Manual',
+      description: 'Access the user manual for instructions on how to operate and troubleshoot the device.',
+      icon: './assets/images/information.png',
+      type: "userManual"
+    },
     {
       id: 3,
       title: 'Mode Configuration',
@@ -74,20 +76,35 @@ export class Menu2Component {
     }
   ];
   storage: any;
-  constructor(private dialog: MatDialog, private router: Router, private authService: AuthService, private toastService: ToastService, private fsService: FilesystemService) {
+  constructor(private dialog: MatDialog,
+    private router: Router,
+    private authService: AuthService,
+    private toastService: ToastService,
+    private fsService: FilesystemService,
+    private logger: LoggerService
+  ) {
     this.deviceInfo = JSON.parse(sessionStorage.getItem('device') || '{}');
     console.log(this.deviceInfo);
     console.log(this.router.url);
-    this.isLoginPage = this.router.url == '/login' && sessionStorage.getItem("isLogin") != "true"
+    this.isLoginPage = this.router.url == '/login' && sessionStorage.getItem("isLogin") != "true";
+
+    this.logger.info('Menu2.constructor', 'Menu2 initialized', {
+      route: this.router.url,
+      isLoginPage: this.isLoginPage,
+      device: this.deviceInfo?.username
+    });
   }
 
 
   ngOnInit(): void {
+    this.logger.info('ngOnInit', 'Menu2 loaded');
     this.getStorageInfo();
 
   }
 
   openDialog(type: string) {
+    this.logger.info('Dialog', 'Open requested', type);
+
     // Define all dialog mappings
     this.dialogMap = {
       devcieinfo: this.devcieinfo,
@@ -100,20 +117,21 @@ export class Menu2Component {
 
     // 🛑 Check if invalid type
     if (!dialogComponent) {
-      console.error(`Dialog type "${type}" not found!`);
+      this.logger.warn('Dialog', 'Invalid dialog type', type);
       this.toastService.info(`"${type}" coming soon!`);
       return;
     }
 
     // 🛑 Prevent opening same popup again
     if (this.dialogRef && this.currentDialogType === type) {
-      console.warn(`Dialog "${type}" already open — skipping.`);
+      this.logger.warn('Dialog', 'Dialog already open', type);
       this.toastService.info(`${type} is already open.`);
       return;
     }
 
     // 🟢 Allow new popup — but close the old one first if different
     if (this.dialogRef) {
+      this.logger.info('Dialog', 'Closing previous dialog', this.currentDialogType);
       this.dialogRef.close();
     }
 
@@ -125,7 +143,10 @@ export class Menu2Component {
     });
 
     this.dialogRef.afterClosed().subscribe((result: any) => {
-      console.log(`Dialog "${type}" closed with result:`, result);
+      this.logger.info('Dialog', 'Dialog closed', {
+        type,
+        result
+      });
 
       // Reset after close
       this.dialogRef = null;
@@ -136,12 +157,14 @@ export class Menu2Component {
 
   openLogoutDialog(): void {
 
+    this.logger.warn('Logout', 'Logout confirmation opened');
+
     this.dialogRef = this.dialog.open(this.logoutconfirmsecond, {
       minWidth: "30vw"
     });
 
     this.dialogRef.afterClosed().subscribe((result: any) => {
-      console.log('Dialog closed with result:', result);
+      this.logger.info('Logout', 'User logout choice', result);
 
       let v = {
         isConfirmed: result === 'yes', isDenied: result === 'no'
@@ -152,16 +175,19 @@ export class Menu2Component {
         // ✅ Remember
         localStorage.setItem('rememberDevice', 'true');
         localStorage.setItem('username', this.deviceInfo?.username || '');
+        this.logger.info('Logout', 'Device remembered');
       }
 
       if (result === 'no') {
         // ✅ Reset
         localStorage.removeItem('rememberDevice');
         localStorage.removeItem('username');
+        this.logger.info('Logout', 'Device reset');
       }
 
       if (result === 'yes' || result === 'no') {
         this.authService.logout(v).subscribe((res: any) => {
+          this.logger.warn('Logout', 'Logout completed');
           this.toastService.success(res?.message || "Logged out successfully!!");
           this.dialog.closeAll();
         });
@@ -170,6 +196,10 @@ export class Menu2Component {
     });
   }
   clearDownloads(type: any): void {
+    this.logger.warn('Storage', 'Clear storage requested', {
+      fullReset: !!type
+    });
+
     if (type) {
       this.fsService.deleteAllFilesWithFolder('downloads')
         .then(() => {
@@ -191,6 +221,7 @@ export class Menu2Component {
     } else {
       this.fsService.deleteAllFiles('downloads')
         .then(() => {
+          this.logger.info('Storage', 'Storage cleared successfully');
           this.toastService.success('Downloads cleared');
           this.getStorageInfo();
           localStorage.removeItem("splitScreenList");
@@ -199,6 +230,7 @@ export class Menu2Component {
           });
         })
         .catch((err: any) => {
+          this.logger.error('Storage', 'Storage clear failed', err);
           const message = err?.message || 'Failed to clear storage';
           this.toastService.error(message);
           console.error('Error clearing downloads:', err);
@@ -212,13 +244,19 @@ export class Menu2Component {
   getStorageInfo() {
     this.fsService.getStorageInfo().then(storage => {
       this.storage = storage;
+      this.logger.info('Storage', 'Storage info loaded', storage);
     });
   }
 
   onChangeModeConfiguration(e: boolean) {
+    this.logger.warn('ModeConfig', 'Mode configuration changed', {
+      isChecked: this.isChecked
+    });
+
     if (this.isChecked) {
       this.dialog.closeAll();
       if (this.isLoginPage) {
+        this.logger.info('ModeConfig', 'Redirecting to player');
         this.router.navigate(['/player'], { replaceUrl: true });
       }
 
@@ -226,6 +264,6 @@ export class Menu2Component {
 
     }
     sessionStorage.setItem("ModeConfiguration", this.isChecked)
-    console.log("onChangeModeConfiguration() from menu 2 comp",this.isChecked)
+    console.log("onChangeModeConfiguration() from menu 2 comp", this.isChecked)
   }
 }
