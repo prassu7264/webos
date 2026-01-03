@@ -71,7 +71,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		const savedUsername = localStorage.getItem('rememberDevice') === 'true' ? localStorage.getItem('username') || 'IQW000' : 'IQW000';
 		this.deviceForm.get('deviceCode')?.setValue(savedUsername);
 
-		// ✅ Subscribe to device UID changes
+		//  Subscribe to device UID changes
 		this.uidSub = this.deviceInfoService.deviceUID$.subscribe(uid => {
 			if (uid) {
 				this.deviceUID = uid;
@@ -80,7 +80,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			}
 		});
 
-		// ✅ Start periodic UI checks for dialogs
+		//  Start periodic UI checks for dialogs
 		this.dialogCheckInterval = setInterval(() => {
 			this.isAnyPopped = this.matDialog.openDialogs.length > 0;
 			if (this.isAnyPopped || this.isLoggedin) {
@@ -90,7 +90,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			}
 		}, 2000);
 
-		// ✅ Start device verification loop after video played
+		//  Start device verification loop after video played
 		if (this.isVideoPlayed) {
 			this.logger.info('ngOnInit', 'Video already played → starting device check');
 			this.startDeviceCheckInterval();
@@ -129,7 +129,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		if (this.checkDeviceAndNavigateInterval) clearInterval(this.checkDeviceAndNavigateInterval);
 	}
 
-	// 🔁 Start periodic verification
+	//  Start periodic verification
 	private startDeviceCheckInterval(): void {
 		if (this.checkDeviceAndNavigateInterval) return; // prevent duplicates
 
@@ -141,7 +141,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		}, 10000);
 	}
 
-	// ✅ Main Device Verification Logic
+	//  Main Device Verification Logic
 	private checkDeviceAndNavigate(): void {
 		if (this.isChecking || !this.deviceUID) return;
 		this.isChecking = true;
@@ -199,6 +199,8 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			},
 			error: err => {
 				this.logger.error('DeviceCheck', 'Verification failed', err);
+				//  IMPORTANT: reset checking flag on failure
+				this.isChecking = false;
 			},
 			complete: () => {
 				this.isChecking = false;
@@ -227,6 +229,13 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	submit(): void {
+
+		//  OFFLINE CHECK (single-line logical guard)
+		if (!navigator.onLine) {
+			this.toastService.error("No internet connection. Please connect to network and try again.");
+			return;
+		}
+
 		if (!this.deviceForm.valid || !this.deviceUID) {
 			this.logger.warn('Submit', 'Invalid form submit', {
 				valid: this.deviceForm.valid,
@@ -244,15 +253,19 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			uid: this.deviceUID
 		});
 
-		this.authService.signup(code, this.deviceUID).subscribe((res: any) => {
-			if (res?.status === 'Failed') {
-				this.logger.error('Submit', 'Signup failed', res);
-				this.toastService.error(res.message);
-			} else {
-				this.logger.info('Submit', 'Signup success', res.message);
-				this.toastService.success(res.message);
-				this.isExistedCalled = false;
-				this.checkDeviceAndNavigate();
+		this.authService.signup(code, this.deviceUID).subscribe({
+			next: (res: any) => {
+				if (res?.status === 'Failed') {
+					this.toastService.error(res.message);
+				} else {
+					this.toastService.success(res.message);
+					this.isExistedCalled = false;
+					this.checkDeviceAndNavigate();
+				}
+			},
+			error: () => {
+				//  NETWORK / SERVER FAILURE HANDLING
+				this.toastService.error("Network error. Please check internet connection.");
 			}
 		});
 	}
