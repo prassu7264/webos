@@ -18,6 +18,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { InlineProgressDialogComponent } from '../services/filesystem.service';
 import { VideoPlayerComponent } from '../cell-renders/video-player/video-player.component';
+import { PdfViewerUsermanualComponent } from '../cell-renders/pdf-viewer-usermanual/pdf-viewer-usermanual.component';
 @NgModule({
   declarations: [
     PdfViewerComponent,
@@ -26,7 +27,8 @@ import { VideoPlayerComponent } from '../cell-renders/video-player/video-player.
     UsermanualComponent,
     Menu1Component,
     InlineProgressDialogComponent,
-    VideoPlayerComponent
+    VideoPlayerComponent,
+    PdfViewerUsermanualComponent
   ],
   imports: [
     CommonModule,
