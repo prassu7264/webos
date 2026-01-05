@@ -58,6 +58,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	activeBottomScroller: any = null;
 	topScrollerTimer: any;
 	bottomScrollerTimer: any;
+	apiFailedNoMediaFallback = false;
 	private pendriveCheckCount = 0;
 	private hasShownCopiedContentToast = false;
 	private pendriveCheckInterval?: any;
@@ -479,22 +480,36 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	}
 
 	private isExistedDevice(deviceUID: string) {
-		this.authService.isExistedDevice(deviceUID).subscribe((res: any) => {
-			if (res?.status !== 'success' || !res.client_status || !res.device_status || res.isexpired) {
-				if (!this.redirecting) {
-					this.redirecting = true;
-					sessionStorage.removeItem("device");
-					this.router.navigate(['/login']);
+		this.authService.isExistedDevice(deviceUID).subscribe({
+			next: (res: any) => {
+				this.apiFailedNoMediaFallback = false; // reset on success
+
+				if (res?.status !== 'success' || !res.client_status || !res.device_status || res.isexpired) {
+					if (!this.redirecting) {
+						this.redirecting = true;
+						sessionStorage.removeItem("device");
+						this.router.navigate(['/login']);
+					}
+				} else if (this.device.orientation !== res.orientation) {
+					const uid = this.device.androidid;
+					this.device = res;
+					this.device.androidid = uid;
+					this.device.isVertical = this.device?.orientation?.includes('9:16');
+					sessionStorage.setItem('device', JSON.stringify(res));
 				}
-			} else if (this.device.orientation !== res.orientation) {
-				const uid = this.device.androidid;
-				this.device = res;
-				this.device.androidid = uid;
-				this.device.isVertical = this.device?.orientation?.includes('9:16');
-				sessionStorage.setItem('device', JSON.stringify(res));
+			},
+			error: () => {
+				//  SEPARATE HANDLING — NO EXISTING LOGIC USED
+				if (
+					!this.zoneinfo.length &&           // no offline / downloaded
+					!this.isPendriveModePlaying              // pendrive not playing
+				) {
+					this.apiFailedNoMediaFallback = true;
+				}
 			}
 		});
 	}
+
 
 	// ✅ Media Loading & Updating
 	private loadMediaFiles() {

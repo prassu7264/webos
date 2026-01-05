@@ -23,6 +23,14 @@ body {
   font-weight: bold !important;
 }
 
+
+.usermanual-dialog .mat-dialog-container {
+  padding: 0 !important;
+  background: black;
+  overflow: hidden;
+}
+
+
 .toast-container .ngx-toastr {
   min-width: 350px !important;
   // max-width: 450px !important; 
