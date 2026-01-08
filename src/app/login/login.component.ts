@@ -202,6 +202,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			},
 			error: err => {
 				this.logger.error('DeviceCheck', 'Verification failed', err);
+				this.toastService.error("Server Not Responding!");
 				//  IMPORTANT: reset checking flag on failure
 				this.isChecking = false;
 			},
