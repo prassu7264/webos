@@ -37,6 +37,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	text: string | null = null;
 	isExistedCalled = false;
 	isAnyPopped = false;
+	isSubmitted = false;
 	isLoggedin = false;
 	version = clienturl.CURRENT_VERSION();
 	contact = "Lumocast Digital Signage Pvt Ltd | Support@Cansignage.Com | +91 91523 98498";
@@ -45,6 +46,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	private checkDeviceAndNavigateInterval: any;
 	private dialogCheckInterval: any;
 	private isChecking = false;
+	userName: String | null = null;
 
 	constructor(
 		private deviceInfoService: DeviceInfoService,
@@ -69,6 +71,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		});
 
 		const savedUsername = localStorage.getItem('rememberDevice') === 'true' ? localStorage.getItem('username') || 'IQW000' : 'IQW000';
+		this.userName = savedUsername;
 		this.deviceForm.get('deviceCode')?.setValue(savedUsername);
 
 		//  Subscribe to device UID changes
@@ -189,7 +192,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 					}
 				} else {
 					this.isOpenSwalAlert = false;
-					if (!this.isExistedCalled) {
+					if (!this.isExistedCalled && this.userName === 'IQW000') {
 						this.toastService.error(res?.message || "Device verification failed!!");
 						this.isExistedCalled = true;
 					}
@@ -229,7 +232,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	submit(): void {
-
+		this.isSubmitted =true;
 		//  OFFLINE CHECK (single-line logical guard)
 		if (!navigator.onLine) {
 			this.toastService.error("No internet connection. Please connect to network and try again.");
