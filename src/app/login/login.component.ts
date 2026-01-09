@@ -30,8 +30,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	deviceForm!: FormGroup;
 	deviceUID: string | null = null;
 	matcher = new MyErrorStateMatcher();
-
-	isVideoPlayed: boolean = sessionStorage.getItem("isVideoPlayed") === "true";
+	// isVideoPlayed: boolean = sessionStorage.getItem("isVideoPlayed") === "true";
 	isOpenSwalAlert = false;
 	type: string | null = null;
 	text: string | null = null;
@@ -62,7 +61,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	ngOnInit(): void {
 		this.logger.info('ngOnInit', 'Login initialized', {
-			isVideoPlayed: this.isVideoPlayed,
+			// isVideoPlayed: this.isVideoPlayed,
 			version: this.version
 		});
 
@@ -94,35 +93,37 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		}, 2000);
 
 		//  Start device verification loop after video played
-		if (this.isVideoPlayed) {
-			this.logger.info('ngOnInit', 'Video already played → starting device check');
-			this.startDeviceCheckInterval();
-		}
+		// if (this.isVideoPlayed) {
+		// 	this.logger.info('ngOnInit', 'Video already played → starting device check');
+		// 	this.startDeviceCheckInterval();
+		// }
+		this.startDeviceCheckInterval();
 	}
 
 	ngAfterViewInit(): void {
-		const video: HTMLVideoElement | null = document.getElementById("launchervideo") as HTMLVideoElement;
-		if (!video) {
-			this.logger.warn('Video', 'Launcher video element not found');
-			return;
-		}
+		// const video: HTMLVideoElement | null = document.getElementById("launchervideo") as HTMLVideoElement;
+		// if (!video) {
+		// 	this.logger.warn('Video', 'Launcher video element not found');
+		// 	return;
+		// }
 
-		video.muted = true;
-		video.addEventListener("canplay", () => {
-			this.logger.info('Video', 'Launcher video ready → autoplay');
-			video.play().then(() => {
-				video.muted = false;
-			}).catch(err => console.log("Autoplay blocked:", err));
-		});
+		// video.muted = true;
+		// video.addEventListener("canplay", () => {
+		// 	this.logger.info('Video', 'Launcher video ready → autoplay');
+		// 	video.play().then(() => {
+		// 		video.muted = false;
+		// 	}).catch(err => console.log("Autoplay blocked:", err));
+		// });
 
-		video.addEventListener("ended", () => {
-			this.logger.info('Video', 'Launcher video ended');
-			setTimeout(() => {
-				this.isVideoPlayed = true;
-				sessionStorage.setItem("isVideoPlayed", "true");
-				this.startDeviceCheckInterval();
-			}, 1000);
-		});
+		// video.addEventListener("ended", () => {
+		// 	this.logger.info('Video', 'Launcher video ended');
+		// 	// this.isVideoPlayed = true;
+		// 	sessionStorage.setItem("isVideoPlayed", "true");
+		// 	setTimeout(() => {
+		// 		this.router.navigateByUrl('/login', { replaceUrl: true });
+		// 		this.startDeviceCheckInterval();
+		// 	}, 1000);
+		// });
 	}
 
 	ngOnDestroy(): void {
@@ -141,14 +142,13 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.checkDeviceAndNavigate(); // first immediate check
 		this.checkDeviceAndNavigateInterval = setInterval(() => {
 			this.checkDeviceAndNavigate();
-		}, 10000);
+		}, 5000);
 	}
 
 	//  Main Device Verification Logic
 	private checkDeviceAndNavigate(): void {
 		if (this.isChecking || !this.deviceUID) return;
 		this.isChecking = true;
-
 		this.logger.info('DeviceCheck', 'Verifying device', this.deviceUID);
 
 		this.authService.isExistedDevice(this.deviceUID).subscribe({

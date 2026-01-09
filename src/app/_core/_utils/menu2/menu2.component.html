@@ -44,7 +44,7 @@
 
             <div class="info-row">
                 <span class="info-label">IPK Version:</span>
-                <span class="info-value">{{ deviceInfo.apkVersion!="null" ?deviceInfo.apkVersion: version || 'v1.0.2'
+                <span class="info-value">{{ deviceInfo.apkVersion!="null" ?deviceInfo.apkVersion: version || 'v1.0.3'
                     }}</span>
             </div>
             <div class="info-row">
@@ -134,3 +134,10 @@
         </button>
     </mat-dialog-actions>
 </ng-template>
+
+
+
+<!-- LOGOUT LOADER OVERLAY -->
+<div class="logout-loader" *ngIf="isLoggingOut">
+    <div class="spinner"></div>
+</div>

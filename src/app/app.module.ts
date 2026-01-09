@@ -12,6 +12,7 @@ import { SplitScreenComponent } from './split-screen/split-screen.component';
 import { ContentPlayerComponent } from './content-player/content-player.component';
 import { ScrollerComponent } from './scroller/scroller.component';
 import { YoutubePlayerComponent } from './_core/cell-renders/youtube-player/youtube-player.component';
+import { SplashComponent } from './splash/splash.component';
 
 
 
@@ -23,6 +24,7 @@ import { YoutubePlayerComponent } from './_core/cell-renders/youtube-player/yout
     ContentPlayerComponent,
     ScrollerComponent,
     YoutubePlayerComponent,
+    SplashComponent,
   ],
   imports: [
     BrowserModule,

@@ -26,6 +26,7 @@ export class Menu2Component {
 	@ViewChild('devcieinfo', { static: true }) devcieinfo!: TemplateRef<any>;
 	version = clienturl.CURRENT_VERSION();
 	dialogRef: any;
+	isLoggingOut = false;
 	logoutfirst: boolean = false;
 	dialogMap: any = {
 		devcieinfo: this.devcieinfo,
@@ -61,13 +62,13 @@ export class Menu2Component {
 		//   icon: './assets/images/uparrow.png',
 		//   type: "userManual"
 		// },
-		{
-			id: 5,
-			title: 'Network Settings',
-			description: 'Manage network settings to configure Wi-Fi, Ethernet, and other connectivity options for the device.',
-			icon: './assets/images/technical-support.png',
-			type: "networkSettings"
-		},
+		// {
+		// 	id: 5,
+		// 	title: 'Network Settings',
+		// 	description: 'Manage network settings to configure Wi-Fi, Ethernet, and other connectivity options for the device.',
+		// 	icon: './assets/images/technical-support.png',
+		// 	type: "networkSettings"
+		// },
 		{
 			id: 6,
 			title: 'Logout',
@@ -87,8 +88,6 @@ export class Menu2Component {
 		private logger: LoggerService
 	) {
 		this.deviceInfo = JSON.parse(sessionStorage.getItem('device') || '{}');
-		console.log(this.deviceInfo);
-		console.log(this.router.url);
 		this.isLoginPage = this.router.url == '/login' && sessionStorage.getItem("isLogin") != "true";
 
 		this.logger.info('Menu2.constructor', 'Menu2 initialized', {
@@ -123,10 +122,10 @@ export class Menu2Component {
 		const dialogComponent = this.dialogMap[type];
 		this.isChecked = sessionStorage.getItem("ModeConfiguration") === "true";
 
-		if (type === 'networkSettings') {
-			this.openNetworkSettings();
-			return;
-		}
+		// if (type === 'networkSettings') {
+		// 	this.openNetworkSettings();
+		// 	return;
+		// }
 
 		if (type === 'userManual') {
 			this.openUserManualPopup();
@@ -176,8 +175,8 @@ export class Menu2Component {
 		this.logger.info('UserManual', 'Opening user manual popup');
 
 		this.dialog.open(UsermanualComponent, {
-			width: '100%',
-			height: '100%',
+			width: '60%',
+			height: '80%',
 			panelClass: 'usermanual-dialog',
 			disableClose: true, // BACK handled manually
 			hasBackdrop: true
@@ -226,24 +225,84 @@ export class Menu2Component {
 			}
 
 			if (result === 'yes' || result === 'no') {
-				this.authService.logout(v).subscribe((res: any) => {
-					this.logger.warn('Logout', 'Logout completed');
-					this.toastService.success(res?.message || "Logged out successfully!!");
-					this.dialog.closeAll();
+
+				this.isLoggingOut = true;
+				this.authService.logout(v).subscribe({
+					next: (res: any) => {
+						this.logger.warn('Logout', 'Logout completed');
+						this.toastService.success(res?.message || 'Logged out successfully!!');
+
+						// Close all dialogs
+						this.dialog.closeAll();
+
+						//  Router will navigate → component destroyed → loader auto removed
+					},
+					error: () => {
+						//  In case of error, hide loader
+						this.isLoggingOut = false;
+						this.toastService.error('Logout failed');
+					}
 				});
 			}
 			this.dialogRef = null;
 		});
 	}
 
+	// openLogoutDialog(): void {
+
+	// 	this.logger.warn('Logout', 'Logout confirmation opened');
+
+	// 	this.dialogRef = this.dialog.open(this.logoutconfirmsecond, {
+	// 		minWidth: "30vw"
+	// 	});
+
+	// 	this.dialogRef.afterClosed().subscribe((result: any) => {
+	// 		this.logger.info('Logout', 'User logout choice', result);
+
+	// 		let v = {
+	// 			isConfirmed: result === 'yes', isDenied: result === 'no'
+
+	// 		}
+
+	// 		if (result === 'yes') {
+	// 			//  Remember
+	// 			localStorage.setItem('rememberDevice', 'true');
+	// 			localStorage.setItem('username', this.deviceInfo?.username || '');
+	// 			this.logger.info('Logout', 'Device remembered');
+	// 		}
+
+	// 		if (result === 'no') {
+	// 			//  Reset
+	// 			localStorage.removeItem('rememberDevice');
+	// 			localStorage.removeItem('username');
+	// 			this.logger.info('Logout', 'Device reset');
+	// 		}
+
+	// 		if (result === 'yes' || result === 'no') {
+	// 			this.isLoggingOut = true;
+	// 			this.authService.logout(v).subscribe((res: any) => {
+	// 				this.logger.warn('Logout', 'Logout completed');
+	// 				this.toastService.success(res?.message || "Logged out successfully!!");
+	// 				this.dialog.closeAll();
+	// 			});
+	// 		}
+	// 		this.dialogRef = null;
+	// 	});
+	// }
+
+
 
 	openNetworkSettings() {
 		try {
-			if (typeof tizen !== 'undefined' && tizen.systemsettings) {
-				tizen.systemsettings.launch('NETWORK');
-				this.logger.info('Network', 'Opened native network settings');
+			if (typeof tizen !== 'undefined' &&
+				tizen.systemsettings &&
+				typeof tizen.systemsettings.launch === 'function') {
+
+				tizen.systemsettings.launch('WIFI');
+				this.logger.info('Network', 'Attempted to open settings');
+
 			} else {
-				this.toastService.info('Network settings available only on Samsung TV');
+				this.showNetworkHelp();
 			}
 		} catch (e) {
 			this.logger.error('Network', 'Failed to open network settings', e);
@@ -251,6 +310,11 @@ export class Menu2Component {
 		}
 	}
 
+	showNetworkHelp() {
+		this.toastService.info(
+			'Open TV Settings → Network → Wi-Fi to connect'
+		);
+	}
 
 
 	clearDownloads(type: any): void {
@@ -265,9 +329,9 @@ export class Menu2Component {
 					this.fsService.createIQWFolderPath("/opt/usr/home/owner/content/Downloads")
 					this.getStorageInfo();
 					localStorage.removeItem("splitScreenList");
-					this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-						this.router.navigate([this.router.url]);
-					});
+					// this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+					// 	this.router.navigate([this.router.url]);
+					// });
 
 
 				})
@@ -283,9 +347,9 @@ export class Menu2Component {
 					this.toastService.success('Downloads cleared');
 					this.getStorageInfo();
 					localStorage.removeItem("splitScreenList");
-					this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-						this.router.navigate([this.router.url]);
-					});
+					// this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+					// 	this.router.navigate([this.router.url]);
+					// });
 				})
 				.catch((err: any) => {
 					this.logger.error('Storage', 'Storage clear failed', err);
@@ -322,7 +386,6 @@ export class Menu2Component {
 
 		}
 		sessionStorage.setItem("ModeConfiguration", this.isChecked)
-		console.log("onChangeModeConfiguration() from menu 2 comp", this.isChecked)
 	}
 
 	handleBackKey = (event: KeyboardEvent) => {

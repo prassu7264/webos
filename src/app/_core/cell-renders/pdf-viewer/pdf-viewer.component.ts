@@ -66,7 +66,7 @@ export class PdfViewerComponent implements OnChanges, OnDestroy {
     this.interval = setInterval(() => {
       if (this.currentPage < this.totalPages) {
         this.currentPage++;
-        console.log(`➡️ Page ${this.currentPage}/${this.totalPages}`);
+        // console.log(`➡️ Page ${this.currentPage}/${this.totalPages}`);
       } else if (this.loop) {
         this.logger.info('SlideShow', 'Looping PDF slideshow');
         this.currentPage = 1;

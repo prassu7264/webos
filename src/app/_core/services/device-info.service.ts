@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, filter, take } from 'rxjs';
 import { LoggerService } from '../services/logger.service';
 
 @Injectable({
@@ -68,7 +68,6 @@ export class DeviceInfoService {
       this.logger.info('initDeviceUID', 'Platform detected: Tizen');
       try {
         const productInfo = (window as any).webapis.productinfo;
-        console.log(productInfo);
         uid = productInfo.getDuid();
         this.logger.info('initDeviceUID', 'Tizen DUID resolved');
       } catch (error: any) {
@@ -147,4 +146,12 @@ export class DeviceInfoService {
   getDeviceUID(): string | null {
     return this.deviceUIDSubject.getValue();
   }
+
+  waitForDeviceUID() {
+    return this.deviceUID$.pipe(
+      filter((uid): uid is string => uid !== null),
+      take(1)
+    );
+  }
+
 }
