@@ -26,6 +26,7 @@ export class Menu2Component {
 	@ViewChild('devcieinfo', { static: true }) devcieinfo!: TemplateRef<any>;
 	version = clienturl.CURRENT_VERSION();
 	dialogRef: any;
+	logoutfirst: boolean = false;
 	dialogMap: any = {
 		devcieinfo: this.devcieinfo,
 		logout: this.logoutconfirm,
@@ -60,13 +61,13 @@ export class Menu2Component {
 		//   icon: './assets/images/uparrow.png',
 		//   type: "userManual"
 		// },
-		// {
-		// 	id: 5,
-		// 	title: 'Network Settings',
-		// 	description: 'Manage network settings to configure Wi-Fi, Ethernet, and other connectivity options for the device.',
-		// 	icon: './assets/images/technical-support.png',
-		// 	type: "networkSettings"
-		// },
+		{
+			id: 5,
+			title: 'Network Settings',
+			description: 'Manage network settings to configure Wi-Fi, Ethernet, and other connectivity options for the device.',
+			icon: './assets/images/technical-support.png',
+			type: "networkSettings"
+		},
 		{
 			id: 6,
 			title: 'Logout',
@@ -101,8 +102,13 @@ export class Menu2Component {
 	ngOnInit(): void {
 		this.logger.info('ngOnInit', 'Menu2 loaded');
 		this.getStorageInfo();
-
+		document.addEventListener('keydown', this.handleBackKey);
 	}
+
+	ngOnDestroy(): void {
+		document.removeEventListener('keydown', this.handleBackKey);
+	}
+
 
 	openDialog(type: string) {
 		this.logger.info('Dialog', 'Open requested', type);
@@ -117,10 +123,10 @@ export class Menu2Component {
 		const dialogComponent = this.dialogMap[type];
 		this.isChecked = sessionStorage.getItem("ModeConfiguration") === "true";
 
-		// if (type === 'networkSettings') {
-		// 	this.openNetworkSettings();
-		// 	return;
-		// }
+		if (type === 'networkSettings') {
+			this.openNetworkSettings();
+			return;
+		}
 
 		if (type === 'userManual') {
 			this.openUserManualPopup();
@@ -183,8 +189,18 @@ export class Menu2Component {
 
 		this.logger.warn('Logout', 'Logout confirmation opened');
 
+
+		//  CLOSE FIRST LOGOUT CONFIRM DIALOG
+		if (this.dialogRef) {
+			this.logger.info('Logout', 'Closing first logout dialog');
+			this.dialogRef.close();
+			this.dialogRef = null;
+			this.currentDialogType = null;
+		}
+
 		this.dialogRef = this.dialog.open(this.logoutconfirmsecond, {
-			minWidth: "30vw"
+			minWidth: "30vw",
+			disableClose: true
 		});
 
 		this.dialogRef.afterClosed().subscribe((result: any) => {
@@ -308,4 +324,19 @@ export class Menu2Component {
 		sessionStorage.setItem("ModeConfiguration", this.isChecked)
 		console.log("onChangeModeConfiguration() from menu 2 comp", this.isChecked)
 	}
+
+	handleBackKey = (event: KeyboardEvent) => {
+		// Samsung / TV BACK key codes
+		if (event.key === 'Backspace' || event.key === 'Escape' || event.keyCode === 10009) {
+			if (this.dialog.openDialogs.length > 0) {
+				this.logger.info('Dialog', 'Back pressed → closing all dialogs');
+				event.preventDefault();
+				this.dialog.closeAll();
+				this.dialogRef = null;
+				this.currentDialogType = null;
+			}
+		}
+	};
+
+
 }
