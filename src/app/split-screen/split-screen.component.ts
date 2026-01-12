@@ -39,6 +39,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	autoplayTimer?: any;
 	noMediaAvailable = false;
 	private wasNoMedia = false;
+	offlineNoDownloadedMedia = false;
 	redirecting = false;
 	scrollers: any[] = [];
 	topScrollers: any[] = [];
@@ -59,6 +60,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	topScrollerTimer: any;
 	bottomScrollerTimer: any;
 	apiFailedNoMediaFallback = false;
+	playbackInterruptedByOffline = false;
 	private pendriveCheckCount = 0;
 	private hasShownCopiedContentToast = false;
 	private pendriveCheckInterval?: any;
@@ -155,7 +157,51 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				tap((newState: ConnectionState) => {
 					this.currentState = newState;
 					this.status = newState.hasNetworkConnection ? 'ONLINE' : 'OFFLINE';
-					if (this.status === 'OFFLINE') clearTimeout(this.topScrollerTimer);
+
+					if (this.status === 'ONLINE') {
+						this.offlineNoDownloadedMedia = false;
+						if (this.playbackInterruptedByOffline) {
+							this.logger.info(
+								'Network',
+								'Network restored → restarting zone playback'
+							);
+
+							this.playbackInterruptedByOffline = false;
+
+							// RESET PLAYBACK STATE (same as after login)
+							clearTimeout(this.autoplayTimer);
+							this.zoneCompletionMap = {};
+							this.splitCurrentIndex = 0;
+							this.zoneinfo = [];
+
+							this.router.navigate(['/login'], { replaceUrl: true });
+						}
+					}
+
+					if (this.status === 'OFFLINE') {
+						clearTimeout(this.topScrollerTimer);
+
+						// SAFE EDGE-CASE HANDLING (ADD ONLY THIS BLOCK)
+						if (
+							!this.isPendriveModePlaying &&
+							!this.hasAnyDownloadedMedia()
+						) {
+							this.logger.warn(
+								'Network',
+								'Offline with no downloaded media → showing OFFLINE EMPTY UI'
+							);
+
+							this.splitScreenList = this.filterDownloadedOnly(this.splitScreenList);
+
+							this.offlineNoDownloadedMedia = true;   //  NEW
+							this.playbackInterruptedByOffline = true;
+							this.noMediaAvailable = false;          //  keep original untouched
+
+							this.zoneinfo = [];
+							this.zoneCompletionMap = {};
+							clearTimeout(this.autoplayTimer);
+						}
+					}
 				})
 			).subscribe()
 		);
@@ -510,8 +556,19 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		});
 	}
 
+	private hasAnyDownloadedMedia(): boolean {
+		return this.splitScreenList?.some(layout =>
+			layout?.zonelist?.some((zone: any) =>
+				zone?.media_list?.some(
+					(m: any) => typeof m.downloadedUrl === 'string' && m.downloadedUrl.startsWith('file://')
+				)
+			)
+		) ?? false;
+	}
 
-	// ✅ Media Loading & Updating
+
+
+	// Media Loading & Updating
 	private loadMediaFiles() {
 		this.logger.info('loadMediaFiles', 'Fetching media files');
 
@@ -554,6 +611,22 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				this.showCurrentSlide();  // start only once
 			}
 		});
+	}
+
+	private filterDownloadedOnly(layouts: any[]): any[] {
+		return layouts.map(layout => ({
+			...layout,
+			zonelist: layout.zonelist.map((zone: any) => ({
+				...zone,
+				media_list: zone.media_list.filter(
+					(m: any) =>
+						typeof m.downloadedUrl === 'string' &&
+						m.downloadedUrl.startsWith('file://')
+				)
+			}))
+		})).filter(layout =>
+			layout.zonelist.some((z: any) => z.media_list.length > 0)
+		);
 	}
 
 	private checkForUpdates() {

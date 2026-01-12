@@ -270,37 +270,6 @@ export class FilesystemService {
   }
 
 
-  // List all image files in downloads directory
-
-  listDownloadedImages(virtualRoot = 'downloads'): Promise<{ name: string; uri: string }[]> {
-    return new Promise((resolve, reject) => {
-      if (this.detectPlatform() !== 'tizen') {
-        console.log('⚠️ listDownloadedImages called on non-Tizen platform:', virtualRoot);
-        resolve([]);
-        return;
-      }
-      tizen.filesystem.resolve(
-        virtualRoot,
-        (downloadsDir: any) => {
-          downloadsDir.listFiles(
-            (files: any[]) => {
-              const images = files
-                .filter((file) => !file.isDirectory && /\.(jpeg|jpg|png|gif|mp4|pdf)$/i.test(file.name))
-                .map((file) => ({ name: file.name, uri: file.toURI() }));
-
-              resolve(images);
-            },
-            (error: any) => reject(error)
-          );
-        },
-        (error: any) => reject(error),
-        'r'
-      );
-    });
-  }
-
-
-
   getStorageInfo(): Promise<{
     total: number; used: number; remaining: number;
     totalMB: string; usedMB: string; remainingMB: string;

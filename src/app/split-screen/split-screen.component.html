@@ -12,11 +12,25 @@
         </div>
     </div>
 
+    <!-- OFFLINE + NO DOWNLOADED MEDIA -->
+    <div *ngIf="offlineNoDownloadedMedia && !isPendriveModePlaying && !isPendriveMode" class="no-media-wrapper">
+        <div class="no-media-card">
+            <div class="icon">📂</div>
+            <div class="title">No Downloaded Media Found</div>
+            <div class="subtitle">
+                Internet is unavailable and no media is stored on this device.
+            </div>
+            <div class="neon-loader">
+                <div class="bar"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- API FAILED + NO MEDIA FALLBACK -->
-    <div *ngIf="apiFailedNoMediaFallback" class="no-media-wrapper">
+    <!-- <div *ngIf="apiFailedNoMediaFallback" class="no-media-wrapper">
         <img [src]="device?.isVertical	? 'assets/images/nonetwork_Vertic.png'	: 'assets/images/nonetwork_Horiz.png'"
             style="width:100%;height:100%;object-fit:fill;" />
-    </div>
+    </div> -->
 
     <gridster [options]="options" class="drag-content drag-handler">
         <gridster-item *ngFor="let item of zoneinfo; trackBy: trackById" [item]="item" class="grid-item">

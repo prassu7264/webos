@@ -76,7 +76,10 @@ export class ContentPlayerComponent implements OnChanges {
 			zoneId: this.zoneId
 		});
 
-		this.filesData = this.prepareFiles(this.filesData);
+		this.filesData = this.filterOfflineFiles(
+			this.prepareFiles(this.filesData)
+		);
+
 		this.currentIndex = 0;
 
 		this.logger.info('loadMediaFiles', 'Filtered media list', {
@@ -106,6 +109,12 @@ export class ContentPlayerComponent implements OnChanges {
 			}
 		}
 	}
+	private filterOfflineFiles(files: any[]): any[] {
+		if (this.isOnline) return files;
+
+		return files.filter(f => typeof f.downloadedUrl === 'string' &&	f.downloadedUrl.startsWith('file://'));
+	}
+
 	delay(ms: number) {
 		return new Promise(resolve => setTimeout(resolve, ms));
 	}
@@ -138,6 +147,18 @@ export class ContentPlayerComponent implements OnChanges {
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
 		const currentFile = this.filesData[this.currentIndex];
+		// 🛑 OFFLINE + NO LOCAL FILE → STOP SILENTLY
+		if (
+			!this.isOnline &&
+			(!currentFile?.downloadedUrl || !currentFile.downloadedUrl.startsWith('file://'))
+		) {
+			this.logger.warn('Playback', 'Offline & no local file — skipping zone', {
+				zoneId: this.zoneId
+			});
+			this.zoneComplete.emit(this.zoneId);
+			return;
+		}
+
 		if (!currentFile) {
 			this.logger.warn('showCurrentSlide', 'No media found', {
 				index: this.currentIndex,
@@ -175,7 +196,7 @@ export class ContentPlayerComponent implements OnChanges {
 			const videoZone = zones.find((z: any) => z.media_list?.some((m: any) => m.Filename?.toLowerCase().endsWith('.mp4')));
 			const maxZoneDuration = Math.max(...zones.map((z: any) => Number(z.zone_duration)));
 
-			// ✅ EMIT ZONE COMPLETE ONCE (even if video loops)
+			// EMIT ZONE COMPLETE ONCE (even if video loops)
 			if (videoZone && Number(videoZone.zone_duration) < maxZoneDuration && !this.videoZoneCompletedOnce) {
 				this.videoZoneCompletedOnce = true;
 
@@ -263,7 +284,9 @@ export class ContentPlayerComponent implements OnChanges {
 
 				console.error('Video failed to load', { src: videoEl.currentSrc || currentFile.Url, error: errorMsg, });
 
-				this.toastService.error(errorMsg);
+				if (this.isOnline) {
+					this.toastService.error(errorMsg);
+				}
 			};
 		}
 		else if (currentFile.type === 'image') {
@@ -379,7 +402,7 @@ export class ContentPlayerComponent implements OnChanges {
 
 			const result = await this.fsService.downloadFile(media.Url, 'downloads', media.Filename);
 			if (result && !result.startsWith("https://")) {
-				media.downloadedUrl = result.startsWith("file://") ? result	: "file://" + result;
+				media.downloadedUrl = result.startsWith("file://") ? result : "file://" + result;
 			}
 			this.saveDownloadedFile(media);
 		} catch (err) {

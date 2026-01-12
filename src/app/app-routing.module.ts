@@ -9,6 +9,7 @@ import { SplashComponent } from './splash/splash.component';
 
 const routes: Routes = [
   { path: '', component: SplashComponent},
+  { path: 'reload', component: LoginComponent },
   { path: 'login', component: LoginComponent, canActivate: [LoginRedirectGuard], data: { isLoginPage: true } },
   { path: 'player', component: SplitScreenComponent },
   { path: "**", component: LoginComponent },

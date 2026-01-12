@@ -176,7 +176,7 @@ export class Menu2Component {
 
 		this.dialog.open(UsermanualComponent, {
 			width: '60%',
-			height: '80%',
+			height: '100%',
 			panelClass: 'usermanual-dialog',
 			disableClose: true, // BACK handled manually
 			hasBackdrop: true
@@ -329,9 +329,9 @@ export class Menu2Component {
 					this.fsService.createIQWFolderPath("/opt/usr/home/owner/content/Downloads")
 					this.getStorageInfo();
 					localStorage.removeItem("splitScreenList");
-					// this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-					// 	this.router.navigate([this.router.url]);
-					// });
+					this.router.navigateByUrl('/reload', { skipLocationChange: true }).then(() => {
+						this.router.navigate([this.router.url]);
+					});
 
 
 				})
@@ -347,9 +347,9 @@ export class Menu2Component {
 					this.toastService.success('Downloads cleared');
 					this.getStorageInfo();
 					localStorage.removeItem("splitScreenList");
-					// this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-					// 	this.router.navigate([this.router.url]);
-					// });
+					this.router.navigateByUrl('/reload', { skipLocationChange: true }).then(() => {
+						this.router.navigate([this.router.url]);
+					});
 				})
 				.catch((err: any) => {
 					this.logger.error('Storage', 'Storage clear failed', err);

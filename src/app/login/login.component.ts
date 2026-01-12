@@ -69,7 +69,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			deviceCode: ['', [Validators.required, Validators.pattern(/^IQW[0-9]+$/i)]]
 		});
 
-		const savedUsername = localStorage.getItem('rememberDevice') === 'true' ? localStorage.getItem('username') || 'IQW000' : 'IQW000';
+		const savedUsername = localStorage.getItem('rememberDevice') === 'true' ? localStorage.getItem('username') : 'IQW000';
 		this.userName = savedUsername;
 		this.deviceForm.get('deviceCode')?.setValue(savedUsername);
 
@@ -99,6 +99,17 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		// }
 		this.startDeviceCheckInterval();
 	}
+
+	@HostListener('document:visibilitychange')
+	onVisibilityChange() {
+		if (!document.hidden) {
+			const savedUsername = localStorage.getItem('username');
+			if (savedUsername) {
+				this.deviceForm.get('deviceCode')?.setValue(savedUsername, { emitEvent: false });
+			}
+		}
+	}
+
 
 	ngAfterViewInit(): void {
 		// const video: HTMLVideoElement | null = document.getElementById("launchervideo") as HTMLVideoElement;
@@ -233,7 +244,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	submit(): void {
-		this.isSubmitted =true;
+		this.isSubmitted = true;
 		//  OFFLINE CHECK (single-line logical guard)
 		if (!navigator.onLine) {
 			this.toastService.error("No internet connection. Please connect to network and try again.");
