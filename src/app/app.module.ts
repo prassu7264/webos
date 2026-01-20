@@ -17,6 +17,7 @@ import { Menu2Component } from './_core/_utils/menu2/menu2.component';
 import { OfflinePlayerComponent } from './offline-player/offline-player.component';
 import { UsbReaderComponent } from './usb-reader/usb-reader.component';
 import { YoutubePlayerComponent } from './_core/cell-renders/youtube-player/youtube-player.component';
+import { UsermanualComponent } from './_core/_utils/usermanual/usermanual.component';
 
 
 
@@ -31,7 +32,8 @@ import { YoutubePlayerComponent } from './_core/cell-renders/youtube-player/yout
     Menu2Component,
     OfflinePlayerComponent,
     UsbReaderComponent,
-    YoutubePlayerComponent
+    YoutubePlayerComponent,
+    UsermanualComponent
   
   ],
   imports: [
