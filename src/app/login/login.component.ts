@@ -237,6 +237,13 @@ export class LoginComponent implements OnInit, AfterViewInit {
 	}
 
 	submit(): void {
+
+		//  OFFLINE CHECK (single-line logical guard)
+		if (!navigator.onLine) {
+			this.toastService.error("No internet connection. Please connect to network and try again.");
+			return;
+		}
+
 		this.isAnypopped = true;   // Disable the input after submit Form
 		if (!this.deviceForm.valid || !this.deviceUID) {
 			this.toastService.info('Invalid form');
