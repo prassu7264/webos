@@ -9,13 +9,15 @@ import { YtubeplayerComponent } from '../cell-renders/ytubeplayer/ytubeplayer.co
 import { MenuComponent } from '../_utils/menu/menu.component';
 import { MatMaterialModule } from '../mat-material/mat-material.module';
 import { ConnectionServiceModule } from 'ng-connection-service';
+import { PdfViewerUsermanualComponent } from '../cell-renders/pdf-viewer-usermanual/pdf-viewer-usermanual.component';
 
 @NgModule({
   declarations: [
     PdfViewerComponent,
     YtplayerComponent,
     YtubeplayerComponent,
-    MenuComponent
+    MenuComponent,
+    PdfViewerUsermanualComponent
   ],
   imports: [
     CommonModule,
