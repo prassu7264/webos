@@ -24,6 +24,24 @@
   height: 100%;
 }
 
+.download-spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(0, 217, 255, 0.512);
+    border-top-color: #00e5ff;
+    border-radius: 100%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.progress-ring {
+  width: 60px;
+  height: 60px;
+}
+
 
 
 .ticker-bar {

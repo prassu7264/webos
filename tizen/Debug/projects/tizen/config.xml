@@ -5,7 +5,7 @@
     <feature name="http://tizen.org/feature/screen.size.normal.1080.1920"/>
     <content src="www/index.html"/>
     <icon src="icon.png"/>
-    <name>IQ WORLD PLAYER</name>
+    <name>IQ_WORLD_PLAYER</name>
     <!-- Profile (Samsung Smart TV) -->
     <tizen:profile name="tv-samsung"/>
     <!-- Metadata -->

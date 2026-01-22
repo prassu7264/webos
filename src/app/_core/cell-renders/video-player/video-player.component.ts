@@ -202,9 +202,9 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, OnChanges {
       const tryPlay = async (attempt = 1) => {
         try {
           await videoEl.play();
-          console.log(`✅ Video started (attempt ${attempt})`);
+          // console.log(`✅ Video started (attempt ${attempt})`);
         } catch (err) {
-          console.log(`⚠️ Autoplay attempt ${attempt} failed`, err);
+          // console.log(`⚠️ Autoplay attempt ${attempt} failed`, err);
           if (!videoEl.muted) {
             videoEl.muted = true;
           }

@@ -1,5 +1,7 @@
 import { Component, Inject, Injectable, NgZone } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { BehaviorSubject } from 'rxjs';
+
 declare const tizen: any;
 interface UsbInfo {
   totalPendrives: number;
@@ -14,6 +16,16 @@ export class FilesystemService {
   private activeDownloads = new Map<string, Promise<string>>();
   private dialogRef: MatDialogRef<InlineProgressDialogComponent> | null = null;
   constructor(private ngZone: NgZone, private dialog: MatDialog) { }
+  private downloading$ = new BehaviorSubject<boolean>(false);
+  private downloadProgress$ = new BehaviorSubject<number>(0);
+
+  getDownloadingState() {
+    return this.downloading$.asObservable();
+  }
+
+  getDownloadProgress() {
+    return this.downloadProgress$.asObservable();
+  }
 
   detectPlatform(): 'tizen' | 'webos' | 'browser' {
     const w = window as any;
@@ -43,18 +55,36 @@ export class FilesystemService {
             const listener = {
               onprogress: (id: number, received: number, total: number) => {
                 console.log(`Download progress: ${received}/${total}`);
+                if (total > 0) {
+                  const percent = Math.min(100, (received / total) * 100);
+                  this.ngZone.run(() => {
+                    this.downloadProgress$.next(percent);
+                  });
+                }
               },
               oncompleted: (id: number, path: string) => {
                 console.log("Download completed:", path);
                 this.activeDownloads.delete(key);
+                this.ngZone.run(() => {
+                  this.downloadProgress$.next(0);
+                  this.downloading$.next(false);
+                });
                 resolve(path);
               },
               onfailed: (id: number, error: any) => {
                 console.log("Download failed, returning original URL:", error.name, error.message);
                 this.activeDownloads.delete(key);
+                this.ngZone.run(() => {
+                  this.downloadProgress$.next(0);
+                  this.downloading$.next(false);
+                });
                 resolve(url);
               },
             };
+
+            this.ngZone.run(() => {
+              this.downloading$.next(true);
+            });
 
             tizen.download.start(request, listener);
           } catch (error: any) {
@@ -70,6 +100,10 @@ export class FilesystemService {
           (file: any) => {
             console.log(`File exists at ${fullPath}, using cached file.`);
             this.activeDownloads.delete(key);
+            this.ngZone.run(() => {
+              this.downloadProgress$.next(0);
+              this.downloading$.next(false);
+            });
             resolve(file.toURI());
           },
           (error: any) => {

@@ -96,6 +96,8 @@ export class ContentPlayerComponent implements OnChanges {
 		this.processFilesWithDelay()
 	}
 	async processFilesWithDelay() {
+		if (!this.isOnline) return;
+
 		for (const file of this.filesData) {
 			if (
 				file?.type !== 'youtube' &&
@@ -112,7 +114,7 @@ export class ContentPlayerComponent implements OnChanges {
 	private filterOfflineFiles(files: any[]): any[] {
 		if (this.isOnline) return files;
 
-		return files.filter(f => typeof f.downloadedUrl === 'string' &&	f.downloadedUrl.startsWith('file://'));
+		return files.filter(f => typeof f.downloadedUrl === 'string' && f.downloadedUrl.startsWith('file://'));
 	}
 
 	delay(ms: number) {
@@ -171,6 +173,7 @@ export class ContentPlayerComponent implements OnChanges {
 		if (!Number(currentFile.Mediafile_id)) {
 			currentFile.Mediafile_id = Date.now();
 		}
+
 		console.log("Showing file:", this.currentIndex, currentFile);
 		this.activePlayingId = currentFile.Mediafile_id;
 
@@ -201,7 +204,7 @@ export class ContentPlayerComponent implements OnChanges {
 				this.videoZoneCompletedOnce = true;
 
 				setTimeout(() => {
-					console.log('✅ video zone completed (time based)');
+					// console.log('✅ video zone completed (time based)');
 					this.zoneComplete.emit(this.zoneId);
 					videoEl.loop = true;
 				}, Number(videoZone.zone_duration) * 1000);
@@ -225,9 +228,9 @@ export class ContentPlayerComponent implements OnChanges {
 				attempts++;
 				try {
 					await videoEl.play();
-					console.log('✅ Video started (attempt ' + attempts + ')');
+					// console.log('✅ Video started (attempt ' + attempts + ')');
 				} catch (err) {
-					console.log(`⚠️ Autoplay attempt ${attempts} failed`, err);
+					// console.log(`⚠️ Autoplay attempt ${attempts} failed`, err);
 					if (!videoEl.muted) {
 						videoEl.muted = true;
 						tryPlay();
@@ -305,7 +308,7 @@ export class ContentPlayerComponent implements OnChanges {
 				delayMs = (pendriveDelay > 0 ? pendriveDelay : 10) * 1000;
 			}
 
-			console.log('🖼️ Image delay:', delayMs, 'ms', 'Pendrive:', isPendriveMode);
+			// console.log('🖼️ Image delay:', delayMs, 'ms', 'Pendrive:', isPendriveMode);
 
 			this.autoplayTimer = setTimeout(() => {
 				this.nextSlideAndShow();

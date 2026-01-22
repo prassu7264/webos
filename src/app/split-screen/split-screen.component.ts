@@ -65,6 +65,11 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	private hasShownCopiedContentToast = false;
 	private pendriveCheckInterval?: any;
 	private isNormalMode = false;
+	isDownloading = false;
+	downloadProgress = 0;
+	mediacountforServerDefault = 0;
+	private lastServerDefaultKey: string | null = null;
+
 
 	constructor(
 		private authService: AuthService,
@@ -191,7 +196,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 								'Offline with no downloaded media → showing OFFLINE EMPTY UI'
 							);
 
-							this.splitScreenList = this.filterDownloadedOnly(this.splitScreenList);
 
 							this.offlineNoDownloadedMedia = true;   //  NEW
 							this.playbackInterruptedByOffline = true;
@@ -201,6 +205,22 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 							this.zoneCompletionMap = {};
 							clearTimeout(this.autoplayTimer);
 						}
+						if (!this.isPendriveModePlaying && this.hasAnyDownloadedMedia()) {
+
+							// ✅ keep only downloaded media
+							this.splitScreenList = this.filterDownloadedOnly(this.splitScreenList);
+
+							this.playbackInterruptedByOffline = true;
+							// ✅ force zone rebuild immediately
+							this.splitCurrentIndex = 0;
+							this.zoneCompletionMap = {};
+							this.zoneinfo = [];
+							clearTimeout(this.autoplayTimer);
+
+							// ✅ re-render zones with offline-safe media
+							this.showCurrentSlide();
+						}
+
 					}
 				})
 			).subscribe()
@@ -209,7 +229,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		this.intervalId = setInterval(() => this.checkPendrives(), 3000);
 
 		this.splitService.pendriveTrigger$.subscribe(async () => {
-			console.log('📥 Pendrive trigger received in SplitScreenComponent');
+			// console.log('📥 Pendrive trigger received in SplitScreenComponent');
 			const fods = await this.fsService.countPendrivesWithIQFolder('IQ');
 			const hasPendriveWithIQ = fods.pendrivesWithIQ.length > 0;
 			if (hasPendriveWithIQ) {
@@ -218,8 +238,33 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				await this.pendriveSettings(fullpath);
 			}
 		});
+
+		this.fsService.getDownloadingState().subscribe(isDownloading => {
+			this.isDownloading = isDownloading;
+		});
+
+		this.fsService.getDownloadProgress().subscribe(p => {
+			this.downloadProgress = p;
+		});
+
+
 	}
 
+	private filterDownloadedOnly(layouts: any[]): any[] {
+		return layouts.map(layout => ({
+			...layout,
+			zonelist: layout.zonelist.map((zone: any) => ({
+				...zone,
+				media_list: zone.media_list.filter(
+					(m: any) =>
+						typeof m.downloadedUrl === 'string' &&
+						m.downloadedUrl.startsWith('file://')
+				)
+			}))
+		})).filter(layout =>
+			layout.zonelist.some((z: any) => z.media_list.length > 0)
+		);
+	}
 	async checkPendrives(): Promise<void> {
 		this.logger.log('checkPendrives', 'Checking pendrive status');
 
@@ -386,7 +431,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		this.pendriveCheckCount++;
 		if (this.pendriveCheckCount > 1 && !this.isPendriveNotDetected) {
 			this.toastService.info(message);
-			console.log(message);
+			// console.log(message);
 			this.isPendriveNotDetected = true;
 		}
 	}
@@ -398,7 +443,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	// ✅ Start Pendrive Mode
 	private async startPendriveMode(pendrivePath: string): Promise<void> {
 		this.isPendriveModePlaying = true;
-		console.log('✅ Pendrive detected — loading IQ folder...');
+		// console.log('✅ Pendrive detected — loading IQ folder...');
 		try {
 			let list = await this.fsService.listAllFilesOnStorage(pendrivePath, 'IQ');
 			const files = list.sort((a, b) =>
@@ -407,7 +452,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 					sensitivity: 'base'
 				})
 			);
-			console.log('Files in IQ folder:', files);
+			// console.log('Files in IQ folder:', files);
 			this.zoneinfo = [{ cols: 1, height: 0, id: 0, ismute: 'true', media_list: files, rows: 1, width: 0, x: 0, y: 0, }];
 			this.dialog.closeAll();
 			this.zoneCompletionMap = {};
@@ -419,7 +464,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	// ✅ Stop Pendrive Mode
 	private stopPendriveMode(): void {
 		if (this.isPendriveModePlaying) {
-			console.log('🛑 Pendrive removed or mode off — stopping IQ playback...');
+			// console.log('🛑 Pendrive removed or mode off — stopping IQ playback...');
 			this.isPendriveModePlaying = false;
 			localStorage.removeItem('splitScreenList');
 			this.zoneinfo = [];
@@ -580,9 +625,26 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				scrollers: res?.scrollerList?.length
 			});
 
+			// ✅ STEP A: Detect server default response
+			if (res?.updated_time === null) {
+				this.logger.warn('loadMediaFiles', 'Server default content detected → normalizing media');
+
+				// ✅ STEP B: Normalize ONLY server default media
+				res.layout_list?.forEach((layout: any) => {
+					layout.zonelist?.forEach((zone: any) => {
+						zone.media_list = zone.media_list.map((m: any, index: number) => ({
+							...m,
+							Mediafile_id: index + 1,   // stable unique ID
+							Order_id: index         // preserve API order
+						}));
+					});
+				});
+			}
+
 			const newLayout = this.deepCopy(res?.layout_list ?? []);
 			const layoutList = res?.layout_list ?? [];
 			this.updatedTime = res.updated_time;
+			this.mediacountforServerDefault = res.mediafile_count;
 			this.splitScreen = this.deepCopy(newLayout);
 			this.splitScreenList = this.deepCopy(newLayout);
 			this.scrollers = res?.scrollerList || [];
@@ -590,6 +652,8 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			this.splitCurrentIndex = 0;
 			this.logger.info('loadMediaFiles', 'Media initialized, starting playback');
+			console.log(this.mediacountforServerDefault, "From loadmediafiles()")
+			console.log(res.mediafile_count, "response mediafilecount from loadmediafiles()")
 			this.showCurrentSlide();
 			if (this.canPlayScroller()) {
 				this.startTopScroller();
@@ -613,34 +677,46 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	private filterDownloadedOnly(layouts: any[]): any[] {
-		return layouts.map(layout => ({
-			...layout,
-			zonelist: layout.zonelist.map((zone: any) => ({
-				...zone,
-				media_list: zone.media_list.filter(
-					(m: any) =>
-						typeof m.downloadedUrl === 'string' &&
-						m.downloadedUrl.startsWith('file://')
-				)
-			}))
-		})).filter(layout =>
-			layout.zonelist.some((z: any) => z.media_list.length > 0)
-		);
-	}
 
 	private checkForUpdates() {
 		this.authService.getMediafiles(this.device).subscribe((res: any) => {
+			// const newLayout = (res?.layout_list ?? []).map((l: any) => ({ ...l, zonelist: l.zonelist.map((z: any) => ({ ...z, media_list: z.media_list.map((m: any, i: any) => ({ ...m, Order_id: m.Order_id || i + 1 })) })) }));
 			const newLayout = res?.layout_list ?? [];
 			const newMediaType = res?.media_type ?? null;
 			const newScrollers = res?.scrollerList || [];
 			const noMedia = this.checkNoMedia(newLayout);
 
+			console.log(this.mediacountforServerDefault, "From checkForUpdates()")
+			console.log(res.mediafile_count, "response mediafilecount from checkForUpdates()")
+
+			if (res?.media_type === "default") {
+				res.layout_list?.forEach((layout: any) => {
+					layout.zonelist?.forEach((zone: any) => {
+						zone.media_list = zone.media_list.map((m: any, index: number) => ({
+							...m,
+							Mediafile_id: index + 1,
+							Order_id: index + 1
+						}));
+					});
+				});
+			}
+			if (res?.media_type === "default") {
+				const currentKey = `${this.device.orientation}_${res.mediafile_count}`;
+
+				if (this.lastServerDefaultKey === currentKey) {
+					return; // same server-default for same orientation → skip
+				}
+
+				// NEW server-default (orientation or count changed)
+				this.lastServerDefaultKey = currentKey;
+			}
+
+
 			// --- 1. Scrollers update ---
 			const oldSig = this.getScrollerSignature(this.scrollers);
 			const newSig = this.getScrollerSignature(newScrollers);
 			if (oldSig !== newSig) {
-				console.log("SCROLLER UPDATED → Full DOM rebuild");
+				// console.log("SCROLLER UPDATED → Full DOM rebuild");
 				this.rebuildScroller = false;
 				this.scrollers = newScrollers;
 				this.topScrollers = newScrollers.filter((s: any) => s.type === 'TOP');
@@ -675,7 +751,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				// STOP ANY old loop fully
 				clearTimeout(this.autoplayTimer);
 				this.autoplayTimer = null;
-				console.log("MEDIA RESTORED → CLEAN RESTART");
+				// console.log("MEDIA RESTORED → CLEAN RESTART");
 				this.wasNoMedia = false;
 				// RESET state
 				this.splitCurrentIndex = 0;
@@ -724,13 +800,13 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		const zones = this.splitScreenList[this.splitCurrentIndex]?.zonelist;
 
 		if (!Array.isArray(zones) || zones.length === 0) {
-			console.log('⚠️ Empty zonelist detected → forcing next slide');
+			// console.log('⚠️ Empty zonelist detected → forcing next slide');
 			this.logger.warn('showCurrentSlide', 'Empty zonelist, moving next');
 			this.nextSlideAndShow();
 			return;
 		}
 		this.zoneinfo = zones;
-		console.log('Showing zones:', this.zoneinfo);
+		// console.log('Showing zones:', this.zoneinfo);
 		this.logger.info('showCurrentSlide', 'Zones displayed', zones.map(z => z.id));
 	}
 
@@ -738,7 +814,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		clearTimeout(this.autoplayTimer);
 		if (!this.splitScreenList?.length) return;
 		this.splitCurrentIndex = (this.splitCurrentIndex + 1) % this.splitScreenList.length;
-		console.log("Splitscreen Current index: ", this.splitCurrentIndex)
+		// console.log("Splitscreen Current index: ", this.splitCurrentIndex)
 		this.showCurrentSlide();
 	}
 
@@ -844,7 +920,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 
 				// ✅ Step 3: Refresh file list and update zone info
 				let files: any = await this.fsService.listAllFilesOnStorage(destination);
-				console.log('Copied files:', files);
+				// console.log('Copied files:', files);
 
 				this.zone.run(async () => {
 					this.zoneinfo = [];
@@ -855,7 +931,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 					this.zoneinfo = [{ cols: 1, height: 0, id: Date.now(), ismute: 'true', media_list: files, rows: 1, width: 0, x: 0, y: 0, },];
 					this.cdr.detectChanges();
 					this.toastService.success('Files copied and updated.');
-					console.log('Updated zoneinfo:', this.zoneinfo);
+					// console.log('Updated zoneinfo:', this.zoneinfo);
 					this.zoneCompletionMap = {};
 					this.dialog.closeAll();
 				});

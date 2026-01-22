@@ -42,8 +42,27 @@
         </gridster-item>
     </gridster>
 
-    <div *ngIf="!isPendriveMode" class="px-4" style="position: absolute;bottom: 4em;z-index: 1;right: 1.5em;">
-        <ng-container [ngSwitch]="status">
+    <div *ngIf="!isPendriveMode" class="px-4"
+        style="position: absolute;bottom: 8em;z-index: 1;right: 1.5em;width:70px;z-index:10;height:70px;display:flex;align-items:center;justify-content:center;">
+        <!-- DOWNLOAD IN PROGRESS -->
+        <div *ngIf="isDownloading && status === 'ONLINE'" class="progress-ring">
+            <svg width="70" height="70">
+                <!-- background ring -->
+                <circle cx="35" cy="35" r="30" stroke="#2e2e2e" stroke-width="6" fill="none" />
+
+                <!-- progress ring -->
+                <circle cx="35" cy="35" r="30" stroke="#00e5ff" stroke-width="6" fill="none" stroke-linecap="round"
+                    [attr.stroke-dasharray]="188" [attr.stroke-dashoffset]="188 - (188 * downloadProgress / 100)"
+                    transform="rotate(-90 35 35)" />
+            </svg>
+        </div>
+
+    </div>
+
+    <div *ngIf="!isPendriveMode" class="px-4"
+        style="position: absolute;bottom: 4em;z-index: 1;right: 1.5em;width:70px;z-index:10;height:70px;display:flex;align-items:center;justify-content:center;">
+        <!-- NORMAL ONLINE / OFFLINE ICON -->
+        <ng-container *ngIf="!isDownloading" [ngSwitch]="status">
             <img [ngClass]="status" *ngSwitchCase="'ONLINE'" style="width: 70px;" src="assets/images/ONLINE.png"
                 alt="⦿">
             <img [ngClass]="status" *ngSwitchCase="'OFFLINE'" style="width: 70px;" src="assets/images/OFFLINE.png"
