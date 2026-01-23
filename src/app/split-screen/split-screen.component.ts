@@ -163,6 +163,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 					this.currentState = newState;
 					this.status = newState.hasNetworkConnection ? 'ONLINE' : 'OFFLINE';
 
+
 					if (this.status === 'ONLINE') {
 						this.offlineNoDownloadedMedia = false;
 						if (this.playbackInterruptedByOffline) {
@@ -626,7 +627,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			});
 
 			// ✅ STEP A: Detect server default response
-			if (res?.updated_time === null) {
+			if (res?.media_type === 'default') {
 				this.logger.warn('loadMediaFiles', 'Server default content detected → normalizing media');
 
 				// ✅ STEP B: Normalize ONLY server default media
@@ -686,9 +687,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			const newScrollers = res?.scrollerList || [];
 			const noMedia = this.checkNoMedia(newLayout);
 
-			console.log(this.mediacountforServerDefault, "From checkForUpdates()")
-			console.log(res.mediafile_count, "response mediafilecount from checkForUpdates()")
-
 			if (res?.media_type === "default") {
 				res.layout_list?.forEach((layout: any) => {
 					layout.zonelist?.forEach((zone: any) => {
@@ -704,11 +702,11 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 				const currentKey = `${this.device.orientation}_${res.mediafile_count}`;
 
 				if (this.lastServerDefaultKey === currentKey) {
-					return; // same server-default for same orientation → skip
+					// same server default → skip ONLY server-default-specific reset
+				} else {
+					this.lastServerDefaultKey = currentKey;
 				}
 
-				// NEW server-default (orientation or count changed)
-				this.lastServerDefaultKey = currentKey;
 			}
 
 
@@ -785,7 +783,7 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	// ✅ Slide Playback Logic
+	//  Slide Playback Logic
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
 		this.zoneinfo = [];
