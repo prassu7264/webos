@@ -17,15 +17,10 @@ sRPEpMdXrw==</DigestValue>
 <DigestValue>/ZmliO/FqlSlMpeZ/YC62god8SmnSRV/WswXRLCL/cf+Bu0maRpTXur4vehsjsaTtaQ2xmABxyOZ
 aKdJo9ye3g==</DigestValue>
 </Reference>
-<Reference URI="IQ%20WORLD%20PLAYER.wgt">
-<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>y1ReUPZBBHI6VMXUG1Gds3uoX2YfW5IedTzd4yK6lqH7kbqd+mWeld+9pSWcUUft7yO2/eo7/CL/
-swEuIZvd2w==</DigestValue>
-</Reference>
 <Reference URI="author-signature.xml">
 <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>J1uxgXQXNeZ4l6A4HFzXuX1rNaWLf7kzhh4pcQlEKrvbIA+haLyzmQL1WYIxEqXwnKhpmmBOt3Cc
-ALvl8Jb0qA==</DigestValue>
+<DigestValue>lQG4KCB3bO/vKYKRzOW6a2jadIHvXBrxfe3Sx+DdOlHJHjb6zIR/lDr+zEV/0gvnJRXC8c6aullD
+ul1qNHXBww==</DigestValue>
 </Reference>
 <Reference URI="config.xml">
 <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
@@ -2617,11 +2612,11 @@ GyvKX9Snig==</DigestValue>
 </Reference>
 </SignedInfo>
 <SignatureValue>
-DwxC8XXZhuNvSjuwzXru+8i+CAwGls7nLQgMc/QiHlqzlemZsJUiJT8UY5DF7uMHLbtgY4gv3e2F
-sCYmnj4joM5oGuPwzMgWMzHf8IYq8vdUrVo+h2uyviwWO1T38obqL4nS+NS5uBEY3feQe2CG7VIs
-oq2gqn5JMJ5QVjd0tr2KYSXzf6dZb0//6s60SkuQ6QlJ6yuyMMeZFe9XdjlLhK2tcL6rJpgqDFw9
-n36Hlbp0LxCZtS6uJhs9QKZ6uGMINcGkjUTc2OPcIy8v35LPyg0zJeYc++uBC0BCggrWCIoxkPB1
-cbmAF7X9EB4zTCNqOEAzksYkn7UOI/rHrXL03g==
+UhvYMmRojJJmo8o7s6MLfmcuJR54b6egLa4bE9beWLZXJ3E+QWJ3RKDE74/TojtI9Ci1A2paXgns
+DcWtxO38Z3zJ1eP/as6Cj4MOJ9BTza8jIfUsSZwD6X7Eap6pB8C+4lHoy4pzpWdtOZW01aovxCtl
+prem2cCvOmMEM1snd+Voq6+8MHjHORj4LSHdRvOkmnR6EadRszGfB92/6Awu/coZriueN74XbVRF
+HBWSkcKNWgd2ndZ/8dwBLnS8hRQD/3RyPyE9iCfkjpGv7t+aRBeTkWB46hlYQ2SbnXVFJORCzWAO
+tkbn3jtcn0O48+U7BOHXVjKmDDlyC6PNI2bylA==
 </SignatureValue>
 <KeyInfo>
 <X509Data>

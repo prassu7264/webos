@@ -229,18 +229,34 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	private generateQRCode(uid: string): void {
 		const qrcodeEl = document.getElementById("qrcode");
 		if (!qrcodeEl) return;
-		qrcodeEl.innerHTML = ""; // clear previous code
 
-		// Device width (TV / Browser / Emulator)
+		qrcodeEl.innerHTML = "";
+
 		const deviceWidth = window.innerWidth;
+		let qrSize: number;
 
-		// Percentage → pixel conversion
-		const qrSize = Math.min(
-			Math.floor(window.innerWidth * this.QR_PERCENT),
-			430 
-		);
+		// 32" HD
+		if (deviceWidth <= 1366) {
+			qrSize = Math.floor(deviceWidth * 0.25); // ~300–340px
+		}
+		// 43" FHD (REFERENCE)
+		else if (deviceWidth <= 1920) {
+			qrSize = 430;
+		}
+		// 55" / 65"
+		else if (deviceWidth <= 2560) {
+			qrSize = 480;
+		}
+		// 4K and above
+		else {
+			qrSize = 520; // capped
+		}
 
-		this.logger.info('QRCode', 'Generating QR code', uid);
+		this.logger.info('QRCode', 'Generating QR code', {
+			uid,
+			deviceWidth,
+			qrSize
+		});
 
 		new QRCode(qrcodeEl, {
 			text: `${BASE_API}#/iqworld/digitalsignage/device/registrationform/${uid}`,
@@ -249,6 +265,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			correctLevel: QRCode.CorrectLevel.H
 		});
 	}
+
 
 	@HostListener('window:resize')
 	onResize() {
