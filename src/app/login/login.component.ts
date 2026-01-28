@@ -38,6 +38,9 @@ export class LoginComponent implements OnInit, AfterViewInit {
 	isAnypopped = false;
 	isChecking = false;
 	isColdBoot: boolean = false;
+	networkToastInterval: any = null;
+	isNetworkDown = false;
+
 	version = clienturl.CURRENT_VERSION();
 	contact: any = "Lumocast Digital Signage Pvt Ltd | Support@Cansignage.Com | +91 91523 98498";
 
@@ -98,6 +101,25 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
 	}
 
+	private startNetworkErrorToast() {
+		if (this.networkToastInterval) return; // prevent duplicates
+
+		this.isNetworkDown = true;
+		this.networkToastInterval = setInterval(() => {
+			this.toastService.error("Getting Network Error!");
+		}, 3000);
+	}
+
+	private stopNetworkErrorToast() {
+		this.isNetworkDown = false;
+
+		if (this.networkToastInterval) {
+			clearInterval(this.networkToastInterval);
+			this.networkToastInterval = null;
+		}
+	}
+
+
 	startPolling() {
 		if (this.pollInterval) clearInterval(this.pollInterval);
 
@@ -125,7 +147,29 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
 	}
 
+
+	@HostListener('window:offline')
+	onOffline() {
+		this.startNetworkErrorToast();
+	}
+
+	@HostListener('window:online')
+	onOnline() {
+		this.stopNetworkErrorToast();
+		this.toastService.success("Network Connected");
+	}
+
+
 	private checkDeviceAndNavigate(): void {
+
+		// 🔴 Network guard
+		if (!navigator.onLine) {
+			this.startNetworkErrorToast();
+			return;
+		}
+
+		// ✅ Network restored
+		this.stopNetworkErrorToast();
 
 		// Block form input when popup open
 		if (this.dialog.openDialogs.length > 0 || this.isOpenSwalAlert) {
@@ -142,10 +186,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
 		this.authService.isExistedDevice(this.deviceUID).subscribe((res: any) => {
 
 			// After 1st call, hide loader
-			if (this.isColdBoot) {
-				this.isChecking = false;  // <── FIX
-				this.isColdBoot = false;
-			}
+			// if (this.isColdBoot) {
+			// 	this.isChecking = false;  // <── FIX
+			// 	this.isColdBoot = false;
+			// }
 
 			// API failed / network issue
 			if (res?.status !== "success") {
