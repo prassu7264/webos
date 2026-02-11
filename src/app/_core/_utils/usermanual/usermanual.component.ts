@@ -25,7 +25,7 @@ export class UsermanualComponent implements OnInit, OnDestroy {
   }
 
   get currentImage(): string {
-    const page = this.currentPage.toString().padStart(2, '0');
+    const page = this.currentPage < 10 ? `0${this.currentPage}` : `${this.currentPage}`;
     return `${this.imageBasePath}/usermanual.v1.0-${page}.png`;
   }
 

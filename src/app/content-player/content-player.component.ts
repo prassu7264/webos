@@ -1,5 +1,6 @@
 import { Component, Input, ViewChild, OnChanges, SimpleChanges, Output, EventEmitter, ElementRef } from '@angular/core';
-import { Subscription, tap } from 'rxjs';
+import { Subscription } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { ToastService } from '../_core/services/toast.service';
 import { YtplayerComponent } from '../_core/cell-renders/ytplayer/ytplayer.component';
 import { FilesystemService } from '../_core/services/filesystem.service';

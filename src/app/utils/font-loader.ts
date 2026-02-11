@@ -1,6 +1,11 @@
 export async function loadFontDynamically(fontFamily: string, fontUrl: string) {
     try {
-        const font = new FontFace(fontFamily, `url(${fontUrl})`);
+        const FontFaceCtor = (window as any).FontFace;
+        if (!FontFaceCtor || !(document as any).fonts?.add) {
+            return false;
+        }
+
+        const font = new FontFaceCtor(fontFamily, `url(${fontUrl})`);
 
         await font.load();
         (document as any).fonts.add(font);

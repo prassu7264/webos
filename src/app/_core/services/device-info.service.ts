@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, filter, take } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+import { filter, take } from 'rxjs/operators';
 import { LoggerService } from '../services/logger.service';
 
 @Injectable({
@@ -48,18 +49,18 @@ export class DeviceInfoService {
                 resolve(res.serialNumber);
               } else {
                 console.log("⚠️ webOS serial not found, using deviceId/fallback");
-                resolve(res.deviceId || crypto.randomUUID());
+                resolve(res.deviceId || this.generateUUID());
               }
             } catch (err) {
               console.error("❌ webOS parse error:", err);
-              resolve(crypto.randomUUID());
+              resolve(this.generateUUID());
             }
           };
 
           bridge.call(url, params);
         } catch (err) {
           console.error("❌ PalmServiceBridge failed:", err);
-          resolve(crypto.randomUUID());
+          resolve(this.generateUUID());
         }
       });
 
@@ -76,12 +77,12 @@ export class DeviceInfoService {
           'Tizen getDuid failed',
           error?.message || error
         );
-        uid = crypto.randomUUID();
+        uid = this.generateUUID();
       }
 
     } else {
       this.logger.warn('initDeviceUID', 'Platform unknown — using fallback UID');
-      uid = localStorage.getItem("fallback_duid") || crypto.randomUUID();
+      uid = localStorage.getItem("fallback_duid") || this.generateUUID();
       localStorage.setItem("fallback_duid", uid);
       console.log("⚠️ Using fallback UID:", uid);
     }
@@ -142,6 +143,27 @@ export class DeviceInfoService {
   //   this.deviceUIDSubject.next(uid);
   //   return uid;
   // }
+
+  private generateUUID(): string {
+    const cryptoObj = (window as any)?.crypto;
+    if (cryptoObj && typeof cryptoObj.randomUUID === 'function') {
+      return cryptoObj.randomUUID();
+    }
+
+    if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
+      const bytes = cryptoObj.getRandomValues(new Uint8Array(16));
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = Array.from(bytes, (b: number) => ('0' + b.toString(16)).slice(-2));
+      return `${hex[0]}${hex[1]}${hex[2]}${hex[3]}-${hex[4]}${hex[5]}-${hex[6]}${hex[7]}-${hex[8]}${hex[9]}-${hex[10]}${hex[11]}${hex[12]}${hex[13]}${hex[14]}${hex[15]}`;
+    }
+
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c: string) => {
+      const r = Math.floor(Math.random() * 16);
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
 
   getDeviceUID(): string | null {
     return this.deviceUIDSubject.getValue();

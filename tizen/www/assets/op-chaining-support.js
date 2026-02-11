@@ -1,28 +1,30 @@
-new (function () {
-  class BrowserCompatibilityTester {
-    // Does your browser doesn't support private fields?
-    #privateField;
+// This file provokes syntax errors if your browser doesn't support
+// some new JavaScript standard. This allows ngx-extended-pdf-viewer
+// to switch to the slow but reliable legacy builds.
+const optionalChaining = {
+  support: true,
+};
 
-    constructor() {
-      // Does your browser support the logical assignment operators?
-      let x = false;
-      x ||= true;
+// Does your browser support the logical assignment operators?
+let x = false;
+x ||= true;
 
-      this.#privateMethod();
-    }
 
-    // Does your browser doesn't support private methods?
-    #privateMethod() {
-      // check the the browser supports string.at()
-      return 'hello'.at(4);
-    }
+// Does your browser doesn't support private fields?
+class ClassWithPrivateField {
+  #privateField;
+}
 
-    supportsOptionalChaining() {
-      const optionalChaining = {
-        support: true,
-      };
-      return optionalChaining?.support;
-    }
+// Does your browser doesn't support private methods?
+class ClassWithPrivateMethod {
+  #privateMethod() {
+    return true;
   }
-  window.supportsOptionalChaining = new BrowserCompatibilityTester().supportsOptionalChaining();
-})();
+
+  constructor() {
+    this.#privateMethod();
+  }
+}
+new ClassWithPrivateMethod();
+
+window.supportsOptionalChaining = optionalChaining?.support;

@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { catchError, of, switchMap } from 'rxjs';
+import { of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { clienturl } from 'src/app/api-base';
 import { LoggerService } from '../services/logger.service';
 const TOKEN_KEY = 'auth-token';

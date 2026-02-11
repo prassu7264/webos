@@ -3,7 +3,8 @@ import { Component, OnInit, OnDestroy, ViewChild, TemplateRef, Injectable, Chang
 import { GridsterConfig, GridsterItem } from 'angular-gridster2';
 import { AuthService } from '../_core/services/auth.service';
 import { DeviceInfoService } from '../_core/services/device-info.service';
-import { interval, Subscription, tap } from 'rxjs';
+import { interval, Subscription } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { NavigationEnd, Router } from '@angular/router';
 import { ConnectionService, ConnectionState } from 'ng-connection-service';
 import { FilesystemService } from '../_core/services/filesystem.service';
@@ -946,6 +947,5 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 	}
 
 }
-
 
 
