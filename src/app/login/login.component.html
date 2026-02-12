@@ -20,27 +20,28 @@
         </div>
         <div style="display: flex; justify-content: center; align-items: center; ">
             <form [formGroup]="deviceForm" class="example-form " (ngSubmit)="submit()">
-                <mat-form-field class="example-full-width">
-                    <mat-label>Device unique code</mat-label>
-                    <input type="text" matInput formControlName="deviceCode" placeholder="Ex. IQW000001"
-                        style="text-transform: uppercase;" (input)="toUppercase($event)" />
+                <div class="custom-input-group">
+                    <label class="custom-label">Device unique code</label>
+                    <input type="text" class="custom-input" formControlName="deviceCode" placeholder="Ex. IQW000001"
+                        (input)="toUppercase($event)" />
 
-                    <mat-hint style="color: white; font-weight: 500;">
+                    <small class="custom-hint" *ngIf="!deviceForm.get('deviceCode')?.invalid">
                         Enter device unique code!
-                    </mat-hint>
+                    </small>
 
-                    <mat-error *ngIf="deviceForm.get('deviceCode')?.hasError('pattern')">
-                        Code must start with IQW followed by digits (Ex. IQW123)
-                    </mat-error>
-
-                    <mat-error *ngIf="deviceForm.get('deviceCode')?.hasError('required')">
-                        Device unique code is <strong>required</strong>
-                    </mat-error>
-                </mat-form-field>
-
-                <br><br>
+                    <div class="error-container"
+                        *ngIf="deviceForm.get('deviceCode')?.touched && deviceForm.get('deviceCode')?.invalid">
+                        <small class="custom-error" *ngIf="deviceForm.get('deviceCode')?.hasError('pattern')">
+                            Code must start with IQW followed by digits (Ex. IQW123)
+                        </small>
+                        <small class="custom-error" *ngIf="deviceForm.get('deviceCode')?.hasError('required')">
+                            Device unique code is required
+                        </small>
+                    </div>
+                </div>
                 <!-- IMPORTANT: type="submit" -->
-                <button id="submit-button" mat-raised-button type="submit" [disabled]="isAnyPopped || isLoggedin || isSubmitted">
+                <button id="submit-button" mat-raised-button type="submit"
+                    [disabled]="isAnyPopped || isLoggedin || isSubmitted">
                     Submit
                 </button>
             </form>
