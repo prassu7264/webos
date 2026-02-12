@@ -5,11 +5,127 @@
         <app-menu1 *ngIf="isPendrive"></app-menu1>
         <app-menu2 *ngIf="!isPendrive"></app-menu2>
     </mat-dialog-content>
-    <mat-dialog-actions align="end">
-        <button mat-raised-button [mat-dialog-close]="true" cdkFocusInitial>Close</button>
+    <mat-dialog-actions align="end" class="pendrive-actions">
+        <button *ngIf="isPendrive" mat-raised-button class="pendrive-action-button" (click)="exitPendriveMode()">
+            Exit pendrive mode
+        </button>
+        <button mat-raised-button class="pendrive-action-button" [mat-dialog-close]="true" cdkFocusInitial>Close</button>
     </mat-dialog-actions>
 </ng-template>
 
+<ng-template #aboutTvInfo>
+    <h2 mat-dialog-title style="color: #ff4081; text-align: center;">About TV Info</h2>
+    <div class="about-tv-details">
+        <div class="about-tv-card">
+            <div class="about-tv-header">
+                <h3>About TV Information</h3>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Platform:</span>
+                <span class="info-value">{{ aboutTvDetails.platform }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Tizen OS Version:</span>
+                <span class="info-value">{{ aboutTvDetails.tizenOsVersion }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Model Name:</span>
+                <span class="info-value">{{ aboutTvDetails.modelName }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Model Code:</span>
+                <span class="info-value">{{ aboutTvDetails.modelCode }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Model Number:</span>
+                <span class="info-value">{{ aboutTvDetails.modelNumber }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Manufacturer:</span>
+                <span class="info-value">{{ aboutTvDetails.manufacturer }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Serial Number:</span>
+                <span class="info-value">{{ aboutTvDetails.serialNumber }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Firmware Version:</span>
+                <span class="info-value">{{ aboutTvDetails.firmwareVersion }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">DUID:</span>
+                <span class="info-value">{{ aboutTvDetails.duid }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Build ID:</span>
+                <span class="info-value">{{ aboutTvDetails.buildId }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Build Version:</span>
+                <span class="info-value">{{ aboutTvDetails.buildVersion }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Panel Resolution:</span>
+                <span class="info-value">{{ aboutTvDetails.panelResolution }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Refresh Rate:</span>
+                <span class="info-value">{{ aboutTvDetails.refreshRate }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Network Type:</span>
+                <span class="info-value">{{ aboutTvDetails.networkType }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">IP Address:</span>
+                <span class="info-value">{{ aboutTvDetails.ipAddress }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">IPv6 Address:</span>
+                <span class="info-value">{{ aboutTvDetails.ipv6Address }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">MAC Address:</span>
+                <span class="info-value">{{ aboutTvDetails.macAddress }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Locale:</span>
+                <span class="info-value">{{ aboutTvDetails.locale }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Timezone:</span>
+                <span class="info-value">{{ aboutTvDetails.timezone }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Storage Total:</span>
+                <span class="info-value">{{ aboutTvDetails.storageTotal }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Storage Available:</span>
+                <span class="info-value">{{ aboutTvDetails.storageAvailable }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">CPU Architecture:</span>
+                <span class="info-value">{{ aboutTvDetails.cpuArch }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Local Set:</span>
+                <span class="info-value">{{ aboutTvDetails.localSet }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">TV Server Type:</span>
+                <span class="info-value">{{ aboutTvDetails.tvServerType }}</span>
+            </div>
+        </div>
+    </div>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close cdkFocusInitial>
+            Close
+        </button>
+    </mat-dialog-actions>
+</ng-template>
+	
 <ng-template #exitconfirm>
     <h2 mat-dialog-title class="text-center" style="color: #ff4081;">Are you sure ?</h2>
     <mat-dialog-content class="mat-typography">
