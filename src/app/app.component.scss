@@ -5,3 +5,58 @@
 .OFFLINE {
   color: #F44336;
 }
+
+.pendrive-action-button:focus,
+.pendrive-action-button.cdk-keyboard-focused,
+.pendrive-action-button.mat-focused {
+  box-shadow: 0 0 10px rgba(97, 175, 248, 0.4), 0 0 18px rgba(97, 175, 248, 0.5) !important;
+  border: 2px solid #61aff8;
+}
+
+.about-tv-details {
+  padding: 20px;
+  background-color: #f4f4f4;
+  border-radius: 8px;
+  margin: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.about-tv-card {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.about-tv-header {
+  margin-bottom: 20px;
+}
+
+.about-tv-header h3 {
+  font-size: 22px;
+  color: #333;
+  margin: 0;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: #555;
+}
+
+.info-value {
+  color: #333;
+  text-align: right;
+  margin-left: 20px;
+  word-break: break-word;
+}
