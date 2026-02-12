@@ -3,13 +3,21 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background-color: rgb(131, 181, 245);
+    background-color: #83c4f536;
     padding: 10px;
     border-radius: 4px;
     flex-wrap: wrap;
 
     button {
         font-size: 1em;
+    }
+
+    .pendrive-menu-btn:focus,
+    .pendrive-menu-btn.cdk-keyboard-focused,
+    .pendrive-menu-btn.mat-focused {
+        box-shadow: 0 0 7px rgba(97, 175, 248, 0.4), 0 0 14px rgba(97, 175, 248, 0.5) !important;
+        border: 2px solid #61aff8;
+        font-weight: 800 !important;
     }
 
     input:disabled {

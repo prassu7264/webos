@@ -114,7 +114,7 @@
                 class="w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3 menu-group">
                 <img [src]="option?.icon" [alt]="option?.title || 'icon'" height="100" class="mb-2" />
                 <br>
-                <span>{{ option?.title }}</span>
+                <span class="menu-option-text">{{ option?.title }}</span>
             </button>
         </div>
     </div>
@@ -123,9 +123,9 @@
 <ng-template #modeConfiguration>
     <h2 mat-dialog-title style="color: #ff4081; text-align: center;">Mode Configuration</h2>
     <mat-dialog-content class="mat-typography">
-        <mat-slide-toggle style="background-color:cornsilk; width: 100%;padding: 10px;border-radius: 4px;"
-            (change)="onChangeModeConfiguration(true)" [(ngModel)]="isChecked">
-            : {{isChecked ? "Selected as pendrive ":"Selected as schedule "}}</mat-slide-toggle>
+        <mat-slide-toggle class="mode-config-toggle" (change)="onChangeModeConfiguration(true)" [(ngModel)]="isChecked">
+            {{isChecked ? "Selected as pendrive" : "Selected as schedule"}}
+        </mat-slide-toggle>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close>

@@ -21,8 +21,24 @@
   margin: 20px;
 }
 
-.menu-group{
+.menu-group {
   min-height: 200px;
+}
+
+.menu-option-text {
+  display: block;
+  max-width: 100%;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.25;
+  font-weight: 400;
+  font-size: large;
+  letter-spacing: 0.0892857143em;
+}
+
+.menu .mat-raised-button:focus .menu-option-text,
+.menu .mat-raised-button.mat-focused .menu-option-text {
+  font-weight: 900;
 }
 
 .card-content {
@@ -141,4 +157,24 @@ h3 {
   to {
     transform: rotate(360deg);
   }
+}
+
+.mode-config-toggle {
+  width: 100%;
+  padding: 10px;
+  border-radius: 4px;
+  height: 100%;
+  background-color: cornsilk;
+}
+
+:host ::ng-deep .mode-config-toggle .mat-slide-toggle-label {
+  width: 100%;
+  align-items: center;
+}
+
+:host ::ng-deep .mode-config-toggle .mat-slide-toggle-content {
+  margin-left: 10px;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
