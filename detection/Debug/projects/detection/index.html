@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Samsung TV Detection</title>
+  <style>
+    :root {
+      --bg-1: #071a2f;
+      --bg-2: #10345a;
+      --card: rgba(8, 20, 35, 0.86);
+      --line: rgba(123, 169, 255, 0.35);
+      --text: #edf6ff;
+      --muted: #a8c3de;
+      --ok: #57e7a0;
+      --warn: #ffd46b;
+      --error: #ff8c8c;
+      --btn-a: #6dc0ff;
+      --btn-b: #4c7fe6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: "Trebuchet MS", Verdana, sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, #28487b 0, transparent 45%),
+        radial-gradient(circle at 90% 85%, #1f3f69 0, transparent 42%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    }
+
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 3.4vw, 44px);
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .tagline {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      color: #062241;
+      font-weight: 700;
+      font-size: 15px;
+      background: linear-gradient(130deg, var(--btn-a), var(--btn-b));
+      cursor: pointer;
+    }
+
+    button:hover {
+      filter: brightness(1.08);
+    }
+
+    .status {
+      margin: 12px 0 14px;
+      color: var(--warn);
+      min-height: 22px;
+      font-size: 15px;
+    }
+
+    .status.ok {
+      color: var(--ok);
+    }
+
+    .status.error {
+      color: var(--error);
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: var(--card);
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      letter-spacing: 0.2px;
+    }
+
+    dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: minmax(92px, 0.95fr) minmax(0, 1.2fr);
+      gap: 8px 12px;
+    }
+
+    dt {
+      color: #b7d8fb;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    dd {
+      margin: 0;
+      font-family: "Consolas", "Lucida Console", monospace;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .raw {
+      margin-top: 14px;
+    }
+
+    pre {
+      margin: 0;
+      max-height: 46vh;
+      overflow: auto;
+      border: 1px solid rgba(139, 177, 255, 0.35);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(2, 10, 21, 0.8);
+      color: #e0f3ff;
+      font-family: "Consolas", "Lucida Console", monospace;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .footnote {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>TV Detection</h1>
+        <p class="tagline">Samsung Tizen model, firmware, OS version, DUID, network and build inspector.</p>
+      </div>
+      <div class="actions">
+        <button id="refreshBtn" type="button">Refresh</button>
+        <button id="copyBtn" type="button">Copy JSON</button>
+      </div>
+    </div>
+
+    <p id="status" class="status">Loading data...</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Summary</h2>
+        <dl id="summary"></dl>
+      </section>
+      <section class="card">
+        <h2>Product Info</h2>
+        <dl id="productInfo"></dl>
+      </section>
+      <section class="card">
+        <h2>System Info</h2>
+        <dl id="systemInfo"></dl>
+      </section>
+      <section class="card">
+        <h2>Application</h2>
+        <dl id="appInfo"></dl>
+      </section>
+    </div>
+
+    <section class="card raw">
+      <h2>Raw JSON</h2>
+      <pre id="rawJson"></pre>
+    </section>
+
+    <p class="footnote">Press Back key to exit this diagnostics app.</p>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var lastPayload = null;
+
+      function setStatus(text, mode) {
+        var node = document.getElementById("status");
+        node.textContent = text;
+        node.className = "status" + (mode ? " " + mode : "");
+      }
+
+      function stringifyValue(value) {
+        if (typeof value === "undefined") return "N/A";
+        if (value === null) return "null";
+        if (typeof value === "string") return value;
+        if (typeof value === "number" || typeof value === "boolean") return String(value);
+        try {
+          return JSON.stringify(value);
+        } catch (error) {
+          return String(value);
+        }
+      }
+
+      function cloneObject(value) {
+        if (typeof value === "undefined") return null;
+        if (value === null || typeof value !== "object") return value;
+        try {
+          return JSON.parse(JSON.stringify(value));
+        } catch (error) {
+          return stringifyValue(value);
+        }
+      }
+
+      function render(targetId, map) {
+        var node = document.getElementById(targetId);
+        while (node.firstChild) node.removeChild(node.firstChild);
+
+        var keys = Object.keys(map || {}).sort();
+        if (!keys.length) {
+          var dte = document.createElement("dt");
+          dte.textContent = "info";
+          var dde = document.createElement("dd");
+          dde.textContent = "No data";
+          node.appendChild(dte);
+          node.appendChild(dde);
+          return;
+        }
+
+        for (var i = 0; i < keys.length; i += 1) {
+          var key = keys[i];
+          var dt = document.createElement("dt");
+          dt.textContent = key;
+          var dd = document.createElement("dd");
+          dd.textContent = stringifyValue(map[key]);
+          node.appendChild(dt);
+          node.appendChild(dd);
+        }
+      }
+
+      function safeCall(target, methodName) {
+        if (!target || typeof target[methodName] !== "function") {
+          return "N/A";
+        }
+        try {
+          return target[methodName]();
+        } catch (error) {
+          return "ERROR: " + (error && error.message ? error.message : String(error));
+        }
+      }
+
+      function safeCapability(key) {
+        if (!window.tizen || !window.tizen.systeminfo || typeof window.tizen.systeminfo.getCapability !== "function") {
+          return "N/A";
+        }
+        try {
+          return window.tizen.systeminfo.getCapability(key);
+        } catch (error) {
+          return "ERROR: " + (error && error.message ? error.message : String(error));
+        }
+      }
+
+      function getProperty(typeName, callback) {
+        if (!window.tizen || !window.tizen.systeminfo || typeof window.tizen.systeminfo.getPropertyValue !== "function") {
+          callback("ERROR: tizen.systeminfo not available");
+          return;
+        }
+
+        try {
+          window.tizen.systeminfo.getPropertyValue(
+            typeName,
+            function (value) {
+              callback(cloneObject(value));
+            },
+            function (error) {
+              callback("ERROR: " + (error && error.message ? error.message : String(error)));
+            }
+          );
+        } catch (error) {
+          callback("ERROR: " + (error && error.message ? error.message : String(error)));
+        }
+      }
+
+      function getPropertyGroup(types, done) {
+        var out = {};
+        var left = types.length;
+        if (!left) {
+          done(out);
+          return;
+        }
+
+        for (var i = 0; i < types.length; i += 1) {
+          (function (typeName) {
+            getProperty(typeName, function (value) {
+              out[typeName] = value;
+              left -= 1;
+              if (left === 0) done(out);
+            });
+          }(types[i]));
+        }
+      }
+
+      function collect(done) {
+        var payload = {
+          capturedAt: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          apis: {
+            tizen: !!window.tizen,
+            webapis: !!window.webapis,
+            productinfo: !!(window.webapis && window.webapis.productinfo),
+            systeminfo: !!(window.tizen && window.tizen.systeminfo),
+            application: !!(window.tizen && window.tizen.application)
+          },
+          summary: {},
+          productInfo: {},
+          systemInfo: { capabilities: {}, properties: {} },
+          appInfo: {}
+        };
+
+        var productInfo = window.webapis && window.webapis.productinfo ? window.webapis.productinfo : null;
+        payload.productInfo.duid = safeCall(productInfo, "getDuid");
+        payload.productInfo.model = safeCall(productInfo, "getModel");
+        payload.productInfo.realModel = safeCall(productInfo, "getRealModel");
+        payload.productInfo.modelCode = safeCall(productInfo, "getModelCode");
+        payload.productInfo.firmware = safeCall(productInfo, "getFirmware");
+        payload.productInfo.tizenVersion = safeCall(productInfo, "getVersion");
+        payload.productInfo.localSet = safeCall(productInfo, "getLocalSet");
+        payload.productInfo.serverType = safeCall(productInfo, "getSmartTVServerType");
+
+        var caps = [
+          "http://tizen.org/feature/platform.version",
+          "http://tizen.org/feature/tv",
+          "http://tizen.org/feature/network.wifi",
+          "http://tizen.org/feature/network.ethernet",
+          "http://tizen.org/feature/screen.size.normal.1920.1080"
+        ];
+
+        for (var c = 0; c < caps.length; c += 1) {
+          payload.systemInfo.capabilities[caps[c]] = safeCapability(caps[c]);
+        }
+
+        try {
+          if (window.tizen && window.tizen.application && typeof window.tizen.application.getCurrentApplication === "function") {
+            var app = window.tizen.application.getCurrentApplication();
+            var info = app && app.appInfo ? app.appInfo : null;
+            payload.appInfo.id = info && info.id ? info.id : "N/A";
+            payload.appInfo.name = info && info.name ? info.name : "N/A";
+            payload.appInfo.packageId = info && info.packageId ? info.packageId : "N/A";
+            payload.appInfo.version = info && info.version ? info.version : "N/A";
+          } else {
+            payload.appInfo.error = "tizen.application not available";
+          }
+        } catch (error) {
+          payload.appInfo.error = "ERROR: " + (error && error.message ? error.message : String(error));
+        }
+
+        payload.summary.model = payload.productInfo.model || payload.productInfo.realModel || "N/A";
+        payload.summary.firmware = payload.productInfo.firmware || "N/A";
+        payload.summary.tizenVersion = payload.productInfo.tizenVersion || payload.systemInfo.capabilities["http://tizen.org/feature/platform.version"] || "N/A";
+        payload.summary.duid = payload.productInfo.duid || "N/A";
+        payload.summary.tvFeature = payload.systemInfo.capabilities["http://tizen.org/feature/tv"];
+
+        getPropertyGroup(["BUILD", "NETWORK", "WIFI_NETWORK", "ETHERNET_NETWORK", "DISPLAY", "LOCALE", "STORAGE"], function (props) {
+          payload.systemInfo.properties = props;
+          done(payload);
+        });
+      }
+
+      function flattenSystem(systemInfo) {
+        var flat = {};
+        var caps = systemInfo.capabilities || {};
+        var props = systemInfo.properties || {};
+
+        for (var cap in caps) {
+          if (Object.prototype.hasOwnProperty.call(caps, cap)) {
+            flat["cap:" + cap] = caps[cap];
+          }
+        }
+        for (var prop in props) {
+          if (Object.prototype.hasOwnProperty.call(props, prop)) {
+            flat["prop:" + prop] = props[prop];
+          }
+        }
+        return flat;
+      }
+
+      function refresh() {
+        setStatus("Collecting Tizen data...", "");
+        collect(function (payload) {
+          lastPayload = payload;
+          render("summary", payload.summary);
+          render("productInfo", payload.productInfo);
+          render("systemInfo", flattenSystem(payload.systemInfo));
+          render("appInfo", payload.appInfo);
+          document.getElementById("rawJson").textContent = JSON.stringify(payload, null, 2);
+          setStatus("Captured at " + payload.capturedAt, "ok");
+        });
+      }
+
+      function fallbackCopy(text) {
+        var area = document.createElement("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.focus();
+        area.select();
+
+        var copied = false;
+        try {
+          copied = document.execCommand("copy");
+        } catch (error) {
+          copied = false;
+        }
+        document.body.removeChild(area);
+
+        if (copied) {
+          setStatus("JSON copied.", "ok");
+        } else {
+          setStatus("Copy failed. Read JSON from screen.", "error");
+        }
+      }
+
+      function copyJson() {
+        if (!lastPayload) {
+          setStatus("Nothing to copy. Refresh first.", "error");
+          return;
+        }
+
+        var text = JSON.stringify(lastPayload, null, 2);
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+          navigator.clipboard.writeText(text).then(function () {
+            setStatus("JSON copied.", "ok");
+          }).catch(function () {
+            fallbackCopy(text);
+          });
+          return;
+        }
+        fallbackCopy(text);
+      }
+
+      document.getElementById("refreshBtn").addEventListener("click", refresh);
+      document.getElementById("copyBtn").addEventListener("click", copyJson);
+
+      document.addEventListener("tizenhwkey", function (event) {
+        if (event && event.keyName === "back" && window.tizen && window.tizen.application) {
+          try {
+            window.tizen.application.getCurrentApplication().exit();
+          } catch (error) {
+            setStatus("Exit failed: " + (error && error.message ? error.message : String(error)), "error");
+          }
+        }
+      });
+
+      refresh();
+    }());
+  </script>
+</body>
+</html>
