@@ -654,8 +654,6 @@ export class SplitScreenComponent implements OnInit, OnDestroy {
 			this.bottomScrollers = this.scrollers.filter(s => s.type === 'BOTTOM');
 			this.splitCurrentIndex = 0;
 			this.logger.info('loadMediaFiles', 'Media initialized, starting playback');
-			console.log(this.mediacountforServerDefault, "From loadmediafiles()")
-			console.log(res.mediafile_count, "response mediafilecount from loadmediafiles()")
 			this.showCurrentSlide();
 			if (this.canPlayScroller()) {
 				this.startTopScroller();
