@@ -185,7 +185,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 				return;
 			}
 
-			const keysToRegister = ['0'];
+			const keysToRegister = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 			if (typeof tizen.tvinputdevice.registerKeyBatch === 'function') {
 				tizen.tvinputdevice.registerKeyBatch(
 					keysToRegister,
@@ -408,6 +408,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	private handleAboutTvShortcut(event: KeyboardEvent): boolean {
+		const currentHash = (window.location && window.location.hash ? window.location.hash : '').toLowerCase();
+		if (currentHash.indexOf('/player') === -1) {
+			this.lastAboutTvZeroPressTime = 0;
+			return false;
+		}
+
 		const eventId = `${event.type}:${event.keyCode}:${event.timeStamp}`;
 		if (this.lastAboutTvShortcutEventId === eventId) {
 			return false;
