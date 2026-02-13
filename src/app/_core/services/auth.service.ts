@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { of } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { clienturl } from 'src/app/api-base';
 import { LoggerService } from '../services/logger.service';
 const TOKEN_KEY = 'auth-token';
@@ -14,27 +14,47 @@ const httpOptions = {
   providedIn: 'root'
 })
 export class AuthService {
-  serverInfo = this.getServerDetails();
+  private serverDetailsCache: { application_url: string } | null = null;
+  private serverDetailsCacheExpiresAt = 0;
+  private readonly serverDetailsCacheTtlMs = 2500;
+  private serverDetailsRequest$?: Observable<{ application_url: string }>;
+
   constructor(private http: HttpClient, private logger: LoggerService) {
     this.logger.info('AuthService.constructor', 'AuthService initialized');
   }
+
+  private normalizeBaseUrl(url: any): string {
+    const value = String(url ?? '').trim();
+    return value.endsWith('/') ? value : `${value}/`;
+  }
+
   getServerDetails() {
+    if (this.serverDetailsCache && Date.now() < this.serverDetailsCacheExpiresAt) {
+      return of(this.serverDetailsCache);
+    }
+
+    if (this.serverDetailsRequest$) {
+      return this.serverDetailsRequest$;
+    }
+
     this.logger.info('getServerDetails', 'Resolving server URL');
-    return this.http.get(SERVER_URL, httpOptions).pipe(
-      // if success, use server response
-      switchMap((res: any) => {
-        if (res?.application_url) {
-          return of(res);
-        }
-        // fallback if response doesn't contain application_url
-        return of({ application_url: BASE_URL });
-      }),
-      // if request fails, fallback to BASE_URL
+    this.serverDetailsRequest$ = this.http.get(SERVER_URL, httpOptions).pipe(
+      map((res: any) => ({ application_url: this.normalizeBaseUrl(res?.application_url || BASE_URL) })),
       catchError((err: any) => {
         console.error("getServerDetails() failed, using BASE_URL", err);
-        return of({ application_url: BASE_URL });
-      })
+        return of({ application_url: this.normalizeBaseUrl(BASE_URL) });
+      }),
+      tap((details: { application_url: string }) => {
+        this.serverDetailsCache = details;
+        this.serverDetailsCacheExpiresAt = Date.now() + this.serverDetailsCacheTtlMs;
+      }),
+      finalize(() => {
+        this.serverDetailsRequest$ = undefined;
+      }),
+      shareReplay(1)
     );
+
+    return this.serverDetailsRequest$;
   }
 
   
