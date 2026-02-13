@@ -18,6 +18,7 @@ declare const tizen: any;
 export class Menu2Component {
 	deviceInfo: any = {};
 	isChecked: any = true;
+	isModeToggleFocused: boolean = false;
 	@ViewChild('logoutconfirmfirst', { static: true }) logoutconfirm!: TemplateRef<any>;
 	@ViewChild('logoutconfirmsecond', { static: true }) logoutconfirmsecond!: TemplateRef<any>;
 	@ViewChild('modeConfiguration', { static: true }) modeConfiguration!: TemplateRef<any>;
@@ -370,7 +371,20 @@ export class Menu2Component {
 		});
 	}
 
-	onChangeModeConfiguration(e: boolean) {
+	onModeConfigurationToggleKeydown(event: KeyboardEvent): void {
+		const keyCode = (event as any).keyCode ?? (event as any).which;
+		const isEnterLike = event.key === 'Enter' || event.key === 'NumpadEnter' || keyCode === 13;
+		if (!isEnterLike) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		this.onChangeModeConfiguration({ checked: !this.isChecked });
+	}
+
+	onChangeModeConfiguration(e: any) {
+		this.isChecked = e && typeof e.checked === 'boolean' ? e.checked : this.isChecked;
 		this.logger.warn('ModeConfig', 'Mode configuration changed', {
 			isChecked: this.isChecked
 		});

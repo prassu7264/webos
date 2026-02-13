@@ -161,20 +161,71 @@ h3 {
 
 .mode-config-toggle {
   width: 100%;
-  padding: 10px;
+  background-color: #ece7cb;
   border-radius: 4px;
-  height: 100%;
-  background-color: cornsilk;
+  padding: 8px 10px;
 }
 
-:host ::ng-deep .mode-config-toggle .mat-slide-toggle-label {
+.mode-config-label {
   width: 100%;
+  display: flex;
   align-items: center;
+  gap: 10px;
+  margin: 0;
+  cursor: pointer;
 }
 
-:host ::ng-deep .mode-config-toggle .mat-slide-toggle-content {
-  margin-left: 10px;
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
+.mode-config-text {
+  line-height: 1.2;
+  color: #333333;
+  white-space: normal;
+  font-size: 28px;
+}
+
+:host ::ng-deep .mode-config-button.mat-button-toggle {
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+  flex: 0 0 auto;
+}
+
+:host ::ng-deep .mode-config-button .mat-button-toggle-focus-overlay,
+:host ::ng-deep .mode-config-button .mat-button-toggle-ripple {
+  display: none;
+}
+
+:host ::ng-deep .mode-config-button .mat-button-toggle-label-content {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 18px;
+  border-radius: 4px;
+  background: #9e9a84;
+  padding: 0;
+  line-height: 18px;
+  font-size: 0;
+  transition: background-color 0.2s ease;
+}
+
+:host ::ng-deep .mode-config-button .mat-button-toggle-label-content::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: translateY(-50%);
+  transition: transform 0.2s ease;
+  box-shadow: none;
+}
+
+:host ::ng-deep .mode-config-button.mat-button-toggle-checked .mat-button-toggle-label-content {
+  background: #2f8de4;
+}
+
+:host ::ng-deep .mode-config-button.mat-button-toggle-checked .mat-button-toggle-label-content::after {
+  transform: translate(16px, -50%);
 }

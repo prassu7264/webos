@@ -122,13 +122,29 @@
 
 <ng-template #modeConfiguration>
     <h2 mat-dialog-title style="color: #ff4081; text-align: center;">Mode Configuration</h2>
-    <mat-dialog-content class="mat-typography">
-        <mat-slide-toggle class="mode-config-toggle" (change)="onChangeModeConfiguration(true)" [(ngModel)]="isChecked">
-            {{isChecked ? "Selected as pendrive" : "Selected as schedule"}}
-        </mat-slide-toggle>
+    <mat-dialog-content class="mat-typography" >
+        <mat-button-toggle-group
+            class="mode-config-toggle"
+            [value]="isChecked ? 'pendrive' : 'schedule'"
+            (change)="onChangeModeConfiguration({ checked: $event.value === 'pendrive' })"
+            (keydown)="onModeConfigurationToggleKeydown($event)"
+            aria-label="Mode Configuration"
+        >
+        <label class="mode-config-label" >
+            <mat-button-toggle
+                class="mode-config-button"
+                style="background-color: #5a93c2; border-radius: 50%; width: 36px; height: 36px; display: flex; text-align: center; justify-content: center; align-items: center;"
+                [ngStyle]="{'box-shadow': isModeToggleFocused ? '0 0 7px 7px rgba(0, 0, 0, 0.4), 0 4px 4px rgba(0, 0, 0, 0.6)' : 'none'}"
+                (focusin)="isModeToggleFocused = true"
+                (focusout)="isModeToggleFocused = false"
+                value="pendrive"
+            >{{isChecked ? "Selected as pendrive" : "✔"}}</mat-button-toggle>
+            <span style="margin-left: 1.2em;">Selected as schedule</span>
+            </label>
+        </mat-button-toggle-group>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-        <button mat-raised-button mat-dialog-close>
+        <button mat-raised-button mat-dialog-close cdkFocusInitial>
             Close
         </button>
     </mat-dialog-actions>

@@ -74,6 +74,21 @@ export class Menu1Component implements OnInit {
     }
   }
 
+  onCheckboxRowKeydown(event: KeyboardEvent, type: 'CopyContent' | 'ClearCopyContent') {
+    const keyCode = (event as any).keyCode ?? (event as any).which;
+    const isEnterLike = event.key === 'Enter' || event.key === 'NumpadEnter' || keyCode === 13;
+
+    if (!isEnterLike) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    const checkboxId = type === 'CopyContent' ? 'copyContentCheckbox' : 'clearCopyContentCheckbox';
+    const checkbox = document.getElementById(checkboxId) as HTMLInputElement | null;
+    checkbox?.click();
+  }
+
   changeValue(step: number) {
     const oldDelay = this.imageDelay;
     this.imageDelay = Math.max(0, this.imageDelay + step);

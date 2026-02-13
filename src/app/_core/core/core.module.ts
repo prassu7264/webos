@@ -12,6 +12,7 @@ import { Menu2Component } from '../_utils/menu2/menu2.component';
 import { UsermanualComponent } from '../_utils/usermanual/usermanual.component';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Menu1Component } from '../_utils/menu1/menu1.component';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -39,6 +40,7 @@ import { PdfViewerUsermanualComponent } from '../cell-renders/pdf-viewer-userman
     ConnectionServiceModule,
     MatRadioModule,
     MatSlideToggleModule,
+    MatButtonToggleModule,
     MatSliderModule,
     MatDialogModule,
     MatProgressBarModule

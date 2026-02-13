@@ -1,16 +1,20 @@
 <mat-dialog-content class="mat-typography">
 
-    <mat-slide-toggle labelPosition="before"
-        style="background-color: cornsilk; width: 100%; padding: 10px; border-radius: 4px; margin-bottom: 0.8em; height: 100%;"
-        [(ngModel)]="isCopyContent" (change)="onChangePendriveSetting($event.checked, 'CopyContent')">
-        Copy Content
-    </mat-slide-toggle>
+    <label class="pendrive-checkbox-row" for="copyContentCheckbox" tabindex="0"
+        (keydown)="onCheckboxRowKeydown($event, 'CopyContent')">
+        <span>Copy Content</span>
+        <input id="copyContentCheckbox" class="pendrive-checkbox-input" type="checkbox" [(ngModel)]="isCopyContent"
+            (change)="onChangePendriveSetting($any($event.target).checked, 'CopyContent')"
+            (keydown)="onCheckboxRowKeydown($event, 'CopyContent')" />
+    </label>
 
-    <mat-slide-toggle labelPosition="before"
-        style="background-color: cornsilk; width: 100%; padding: 10px; border-radius: 4px; margin-bottom: 0.8em; height: 100%;"
-        [(ngModel)]="isClearCopyContent" (change)="onChangePendriveSetting($event.checked, 'ClearCopyContent')">
-        Clear & Copy Content
-    </mat-slide-toggle>
+    <label class="pendrive-checkbox-row" for="clearCopyContentCheckbox" tabindex="0"
+        (keydown)="onCheckboxRowKeydown($event, 'ClearCopyContent')">
+        <span>Clear & Copy Content</span>
+        <input id="clearCopyContentCheckbox" class="pendrive-checkbox-input" type="checkbox" [(ngModel)]="isClearCopyContent"
+            (change)="onChangePendriveSetting($any($event.target).checked, 'ClearCopyContent')"
+            (keydown)="onCheckboxRowKeydown($event, 'ClearCopyContent')" />
+    </label>
     <h1 style="margin-bottom: 10px;" mat-dialog-title>Image Delay <span style="font-size: medium;">(Sec)</span> </h1>
     <div class="counter">
         <button mat-raised-button class="pendrive-menu-btn" (click)="changeValue(-1)">-</button>
