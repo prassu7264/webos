@@ -180,10 +180,3 @@ video {
     background-color: rgba(255, 255, 255, 0.2) !important;
     color: rgba(255, 255, 255, 0.4) !important;
 }
-.row.legacy-keyboard-fix {
-    transition: transform 0.2s ease;
-}
-
-.row.legacy-keyboard-fix:focus-within {
-    transform: translateY(-14vh);
-}

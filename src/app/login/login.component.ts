@@ -38,8 +38,6 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 	isAnyPopped = false;
 	isSubmitted = false;
 	isLoggedin = false;
-	isLegacyTizenKeyboardFix = false;
-	isLegacyKeyboardOpen = false;
 	version = clienturl.CURRENT_VERSION();
 	contact = "Lumocast Digital Signage Pvt Ltd | Support@Cansignage.Com | +91 91523 98498";
 
@@ -69,7 +67,6 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			// isVideoPlayed: this.isVideoPlayed,
 			version: this.version
 		});
-		this.isLegacyTizenKeyboardFix = this.shouldUseLegacyKeyboardFix();
 
 		this.deviceForm = this.fb.group({
 			deviceCode: ['', [Validators.required, Validators.pattern(/^IQW[0-9]+$/i)]]
@@ -277,37 +274,6 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		}
 	}
 
-
-	private shouldUseLegacyKeyboardFix(): boolean {
-		try {
-			const productInfo = (window as any).webapis && (window as any).webapis.productinfo;
-			if (!productInfo || typeof productInfo.getVersion !== 'function') {
-				return false;
-			}
-			const version = productInfo.getVersion();
-			const major = parseInt(String(version).split('.')[0], 10);
-			return !isNaN(major) && major <= 8;
-		} catch (error) {
-			return false;
-		}
-	}
-
-	onLegacyKeyboardFocus(): void {
-		if (this.isLegacyTizenKeyboardFix) {
-			this.isLegacyKeyboardOpen = true;
-		}
-	}
-
-	onLegacyKeyboardBlur(): void {
-		this.isLegacyKeyboardOpen = false;
-	}
-
-	@HostListener('document:tizenhwkey', ['$event'])
-	onTizenHwKey(event: any): void {
-		if (event && event.keyName === 'back') {
-			this.isLegacyKeyboardOpen = false;
-		}
-	}
 
 	toUppercase(event: any): void {
 		const value = event.target.value.toUpperCase();
