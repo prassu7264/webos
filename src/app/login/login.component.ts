@@ -285,6 +285,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 		//  OFFLINE CHECK (single-line logical guard)
 		if (!navigator.onLine) {
 			this.toastService.error("No internet connection. Please connect to network and try again.");
+			this.isSubmitted = false;
 			return;
 		}
 
@@ -295,6 +296,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			});
 
 			this.toastService.info("Invalid form");
+			this.isSubmitted = false;
 			return;
 		}
 
@@ -309,6 +311,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			next: (res: any) => {
 				if (res?.status === 'Failed') {
 					this.toastService.error(res.message);
+					this.isSubmitted = false;
 				} else {
 					this.toastService.success(res.message);
 					this.isExistedCalled = false;
@@ -318,6 +321,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 			error: () => {
 				//  NETWORK / SERVER FAILURE HANDLING
 				this.toastService.error("Network error. Please check internet connection.");
+				this.isSubmitted = false;
 			}
 		});
 	}
