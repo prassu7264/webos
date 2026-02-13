@@ -58,9 +58,8 @@ export class LoggerService {
   private startLoggerModePolling(): void {
     interval(this.loggerPollMs).pipe(
       startWith(0),
-      switchMap(() => this.resolveBaseUrl()),
-      switchMap((baseUrl: string) =>
-        this.http.get(`${baseUrl}api/v1/logger`, httpOptions).pipe(
+      switchMap(() =>
+        this.http.get(`${this.baseUrl}api/v1/logger`, httpOptions).pipe(
           map((res: any) => this.extractLoggerMode(res)),
           catchError(() => of<('production' | 'development' | null)>(null))
         )
@@ -71,16 +70,6 @@ export class LoggerService {
         }
       })
     ).subscribe();
-  }
-
-  private resolveBaseUrl() {
-    return this.http.get(SERVER_URL, httpOptions).pipe(
-      map((res: any) => this.normalizeBaseUrl(res?.application_url || BASE_URL)),
-      tap((url: string) => {
-        this.baseUrl = url;
-      }),
-      catchError(() => of(this.baseUrl))
-    );
   }
 
   private extractLoggerMode(response: any): 'production' | 'development' | null {
