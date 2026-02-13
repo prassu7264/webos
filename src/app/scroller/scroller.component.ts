@@ -298,7 +298,7 @@ export class ScrollerComponent implements OnInit, OnDestroy, AfterViewInit, OnCh
 			});
 
 			// --- DOM measurements ---
-			const wrapperWidth = wrapper.offsetWidth - (this.scrollers[0]?.logo ? 60 : 0);
+			const wrapperWidth = wrapper.offsetWidth;
 			const wrapperHeight = wrapper.offsetHeight;
 			const trackWidth = track.scrollWidth;
 			const trackHeight = track.scrollHeight;
