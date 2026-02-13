@@ -270,6 +270,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 		return mapped[key] || this.normalizeTvInfoValue(type);
 	}
 
+	private tizenPlatformVersionFromUserAgent(): string {
+		const userAgent = this.normalizeTvInfoValue((window as any)?.navigator?.userAgent);
+		if (userAgent === 'Not Available') {
+			return 'Not Available';
+		}
+
+		const match = userAgent.match(/Tizen[\/\s]([0-9]+(?:\.[0-9]+)?)/i);
+		if (!match || !match[1]) {
+			return 'Not Available';
+		}
+
+		return `tv-${match[1]}`;
+	}
+
 	private async getSystemInfoProperty(property: string): Promise<any> {
 		const systemInfo = (window as any)?.tizen?.systeminfo;
 		if (!systemInfo || typeof systemInfo.getPropertyValue !== 'function') {
@@ -323,6 +337,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 		);
 
 		const tizenOsVersion = this.firstAvailable(
+			this.tizenPlatformVersionFromUserAgent(),
 			this.safeInfoCall(() => productInfo?.getVersion?.()),
 			capability('http://tizen.org/feature/platform.version')
 		);
