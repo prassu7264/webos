@@ -99,8 +99,18 @@
 
 
 .no-media-wrapper {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  min-width: 100vw;
+  min-height: 100vh;
+  display: -webkit-box;
+  -webkit-box-pack: center;
+  -webkit-box-align: center;
   display: flex;
   justify-content: center;
   align-items: center;

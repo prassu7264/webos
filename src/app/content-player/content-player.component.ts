@@ -23,6 +23,9 @@ export class ContentPlayerComponent implements OnChanges {
 	@ViewChild('videoEl') videoElRef!: ElementRef<HTMLVideoElement>;
 	currentIndex: number = 0;
 	private autoplayTimer?: any;
+	private slideWatchdogTimer?: any;
+	private currentSlideToken = 0;
+	private slideTokenCounter = 0;
 	@Input() zoneId!: number;
 	@Output() zoneComplete = new EventEmitter<number>();
 	playerRecreateKey: string | null = null;
@@ -68,6 +71,7 @@ export class ContentPlayerComponent implements OnChanges {
 		});
 		this.intervalSub?.unsubscribe();
 		clearTimeout(this.autoplayTimer);
+		this.clearSlideWatchdog();
 		this.filesData = [];
 	}
 
@@ -149,6 +153,7 @@ export class ContentPlayerComponent implements OnChanges {
 
 	private showCurrentSlide() {
 		clearTimeout(this.autoplayTimer);
+		this.clearSlideWatchdog();
 		const currentFile = this.filesData[this.currentIndex];
 		// 🛑 OFFLINE + NO LOCAL FILE → STOP SILENTLY
 		if (
@@ -177,6 +182,7 @@ export class ContentPlayerComponent implements OnChanges {
 
 		// console.log("Showing file:", this.currentIndex, currentFile);
 		this.activePlayingId = currentFile.Mediafile_id;
+		const slideToken = this.startSlideSession();
 
 		this.logger.info('showCurrentSlide', 'Playing media', {
 			index: this.currentIndex,
@@ -191,11 +197,18 @@ export class ContentPlayerComponent implements OnChanges {
 
 			if (!videoEl) {
 				this.logger.error('Video', 'Video element not found', this.zoneId);
+				this.nextSlideAndShow();
 				return;
 			}
+			this.scheduleSlideWatchdog(25000, 'Video did not start in time', slideToken);
 			videoEl.removeAttribute('src');
 			videoEl.src = currentFile.downloadedUrl || currentFile.Url;
 			videoEl.currentTime = 0;
+			videoEl.onplaying = () => {
+				if (slideToken === this.currentSlideToken) {
+					this.clearSlideWatchdog();
+				}
+			};
 			const zones = this.splitScreenList?.find(l => l.zonelist?.some((z: any) => z.id === this.zoneId))?.zonelist || [];
 			const videoZone = zones.find((z: any) => z.media_list?.some((m: any) => m.Filename?.toLowerCase().endsWith('.mp4')));
 			const maxZoneDuration = Math.max(...zones.map((z: any) => Number(z.zone_duration)));
@@ -239,12 +252,21 @@ export class ContentPlayerComponent implements OnChanges {
 						setTimeout(tryPlay, 2000);
 					} else {
 						console.error('Video cannot play after multiple attempts', err);
-
+						this.nextSlideAndShow();
 					}
 				}
 			};
 
-			videoEl.addEventListener('canplaythrough', tryPlay, { once: true });
+			let playTriggered = false;
+			const triggerTryPlay = () => {
+				if (playTriggered) return;
+				playTriggered = true;
+				tryPlay();
+			};
+
+			videoEl.addEventListener('loadedmetadata', triggerTryPlay, { once: true });
+			videoEl.addEventListener('canplay', triggerTryPlay, { once: true });
+			videoEl.addEventListener('canplaythrough', triggerTryPlay, { once: true });
 			videoEl.onerror = null;
 
 			videoEl.onerror = () => {
@@ -261,12 +283,15 @@ export class ContentPlayerComponent implements OnChanges {
 					switch (mediaError.code) {
 						case mediaError.MEDIA_ERR_ABORTED:
 							errorMsg = 'Video playback aborted.';
+							this.nextSlideAndShow();
 							break;
 						case mediaError.MEDIA_ERR_NETWORK:
 							errorMsg = 'Network error while loading video.';
+							this.nextSlideAndShow();
 							break;
 						case mediaError.MEDIA_ERR_DECODE:
 							errorMsg = 'Video decoding error.';
+							this.nextSlideAndShow();
 							break;
 						case mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
 
@@ -308,6 +333,7 @@ export class ContentPlayerComponent implements OnChanges {
 				const pendriveDelay = Number(localStorage.getItem('imageDelay'));
 				delayMs = (pendriveDelay > 0 ? pendriveDelay : 10) * 1000;
 			}
+			this.scheduleSlideWatchdog(delayMs + 15000, 'Image slide timeout', slideToken);
 
 			// console.log('🖼️ Image delay:', delayMs, 'ms', 'Pendrive:', isPendriveMode);
 
@@ -322,14 +348,17 @@ export class ContentPlayerComponent implements OnChanges {
 
 			if (!this.isOnline) {
 				this.nextSlideAndShow();
+				return;
 			}
+			this.scheduleSlideWatchdog(30000, 'YouTube did not start in time', slideToken);
 			this.resetPlayerForYouTubeForCurrentIndex();
 		} else if (currentFile.type === 'pdf') {
 			this.logger.info('PDF', 'PDF displayed', {
 				zoneId: this.zoneId
 			});
-			//Nothing to change here
+			this.scheduleSlideWatchdog(30000, 'PDF did not load in time', slideToken);
 		} else {
+			this.scheduleSlideWatchdog(15000, 'Unknown media timeout', slideToken);
 			this.autoplayTimer = setTimeout(() => this.nextSlideAndShow(), 10000);
 		}
 	}
@@ -337,6 +366,7 @@ export class ContentPlayerComponent implements OnChanges {
 
 	private nextSlideAndShow() {
 		clearTimeout(this.autoplayTimer);
+		this.invalidateSlideSession();
 		if (!this.filesData.length) return;
 
 		const isLastMedia = this.currentIndex === this.filesData.length - 1;
@@ -357,9 +387,40 @@ export class ContentPlayerComponent implements OnChanges {
 		if (!event.success && event.message) {
 			this.toastService.error(event.message);
 		}
-		// console.log(event);
-
+		this.clearSlideWatchdog();
 		this.nextSlideAndShow();
+	}
+
+	onImageError() {
+		const currentFile = this.filesData[this.currentIndex];
+		this.logger.error('Image', 'Image failed to load', {
+			src: currentFile?.downloadedUrl || currentFile?.Url,
+			zoneId: this.zoneId
+		});
+		if (this.isOnline) {
+			this.toastService.error('Image failed to load.');
+		}
+		this.nextSlideAndShow();
+	}
+
+	onYoutubeStarted() {
+		if (this.filesData[this.currentIndex]?.type !== 'youtube') return;
+		this.logger.info('YouTube', 'YouTube playback started', {
+			index: this.currentIndex,
+			zoneId: this.zoneId
+		});
+		this.clearSlideWatchdog();
+	}
+
+	onPdfStarted(event: { totalPages: number; loop: boolean }) {
+		if (this.filesData[this.currentIndex]?.type !== 'pdf') return;
+		if (event?.loop) {
+			this.clearSlideWatchdog();
+			return;
+		}
+		const totalPages = Math.max(1, Number(event?.totalPages) || 1);
+		const expectedDurationMs = totalPages * 10000 + 15000;
+		this.scheduleSlideWatchdog(expectedDurationMs, 'PDF slideshow timeout', this.currentSlideToken);
 	}
 
 
@@ -386,6 +447,42 @@ export class ContentPlayerComponent implements OnChanges {
 		const file = this.filesData[this.currentIndex];
 		const url = file?.Url || '';
 		return `${url}_${this.currentIndex}_${Date.now()}`;
+	}
+
+	private startSlideSession(): number {
+		this.clearSlideWatchdog();
+		this.currentSlideToken = ++this.slideTokenCounter;
+		return this.currentSlideToken;
+	}
+
+	private invalidateSlideSession() {
+		this.currentSlideToken = ++this.slideTokenCounter;
+		this.clearSlideWatchdog();
+	}
+
+	private scheduleSlideWatchdog(timeoutMs: number, reason: string, token: number) {
+		this.clearSlideWatchdog();
+		this.slideWatchdogTimer = setTimeout(() => {
+			if (token !== this.currentSlideToken) return;
+			const file = this.filesData[this.currentIndex];
+			this.logger.warn('Playback', 'Media watchdog timeout, moving to next slide', {
+				reason,
+				type: file?.type,
+				index: this.currentIndex,
+				zoneId: this.zoneId
+			});
+			if (this.isOnline && file?.type === 'pdf') {
+				this.toastService.error("PDF content can't load. Possible decoder issue on device.");
+			}
+			this.nextSlideAndShow();
+		}, timeoutMs);
+	}
+
+	private clearSlideWatchdog() {
+		if (this.slideWatchdogTimer) {
+			clearTimeout(this.slideWatchdogTimer);
+			this.slideWatchdogTimer = undefined;
+		}
 	}
 
 

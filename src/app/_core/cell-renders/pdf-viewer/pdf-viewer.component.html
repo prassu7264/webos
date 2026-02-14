@@ -1,3 +1,4 @@
 <ngx-extended-pdf-viewer *ngIf="pdfUrl" [src]="pdfUrl" [zoom]="'page-fit'" [showToolbar]="false" [(page)]="currentPage"
-    [pageViewMode]="'single'" [ignoreKeyboard]="true" (pdfLoaded)="afterLoadComplete($event)">
+    [pageViewMode]="'single'" [ignoreKeyboard]="true" (pdfLoaded)="afterLoadComplete($event)"
+    (pdfLoadingFailed)="onPdfLoadingFailed($event)">
 </ngx-extended-pdf-viewer>

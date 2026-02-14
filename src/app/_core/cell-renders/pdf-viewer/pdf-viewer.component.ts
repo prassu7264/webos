@@ -10,6 +10,7 @@ import { LoggerService } from '../../services/logger.service';
 export class PdfViewerComponent implements OnChanges, OnDestroy {
   @Input() url: any;
   pdfUrl!: string | any;
+  @Output() pdfStarted = new EventEmitter<{ totalPages: number; loop: boolean }>();
   @Output() pdfEnded = new EventEmitter<{ success: boolean; message?: string }>();
   @Input() loop: boolean = false
   currentPage = 1;
@@ -49,11 +50,18 @@ export class PdfViewerComponent implements OnChanges, OnDestroy {
     });
 
     if (this.totalPages > 0) {
+      this.pdfStarted.emit({ totalPages: this.totalPages, loop: this.loop });
       setTimeout(() => this.startSlideShow(), 1000);
     } else {
       this.logger.error('PDFLoaded', 'Page count detection failed');
       this.pdfEnded.emit({ success: false, message: "Could not detect pages in PDF" });
     }
+  }
+
+  onPdfLoadingFailed(error: any) {
+    this.logger.error('PDFLoaded', 'PDF loading failed', error);
+    this.cleanup();
+    this.pdfEnded.emit({ success: false, message: 'PDF failed to load' });
   }
 
   startSlideShow() {

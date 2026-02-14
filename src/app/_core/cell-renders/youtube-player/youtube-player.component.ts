@@ -12,6 +12,7 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy, OnChanges {
   @Input() url!: string;
   @Input() index!: number;
   @Input() loop: boolean = false;
+  @Output() videoStarted = new EventEmitter<void>();
   @Output() videoEnded = new EventEmitter<{ success: boolean; index: number }>();
   isOpenSwalAlert: any
   ytUrl: SafeResourceUrl | null = null;
@@ -83,6 +84,7 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy, OnChanges {
       });
 
       this.status = '▶️ Playing';
+      this.videoStarted.emit();
     }
 
     if (event.data.type === 'YT_VIDEO_ENDED') {
